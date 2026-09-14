@@ -15,6 +15,13 @@
 
         private void InitializeComponent()
         {
+            this.PanelToolbar = new System.Windows.Forms.Panel();
+            this.BtnRecargar = new System.Windows.Forms.Button();
+            this.BtnCambiarCarpeta = new System.Windows.Forms.Button();
+            this.BtnIdioma = new System.Windows.Forms.Button();
+            this.BtnAgregarMod = new System.Windows.Forms.Button();
+            this.BtnIniciarPlutonium = new System.Windows.Forms.Button();
+            this.LblVersion = new System.Windows.Forms.Label();
             this.PanelWeapon = new System.Windows.Forms.Panel();
             this.WeaponLabel = new System.Windows.Forms.Label();
             this.ToggleSwitchWeapons = new ToggleSwitch();
@@ -55,6 +62,10 @@
             this.ItemsHud = new System.Windows.Forms.Panel();
             this.IconSearchHud = new System.Windows.Forms.Label();
             this.SearchHud = new System.Windows.Forms.TextBox();
+            this.BtnEditarPosicionHud = new System.Windows.Forms.Button();
+            this.BtnCambiarIconoHud = new System.Windows.Forms.Button();
+            this.BtnReinstalarHud = new System.Windows.Forms.Button();
+            this.PanelToolbar.SuspendLayout();
             this.PanelWeapon.SuspendLayout();
             this.PanelPerks.SuspendLayout();
             this.PanelScripts.SuspendLayout();
@@ -66,6 +77,86 @@
             this.DetailScripts.SuspendLayout();
             this.DetailHud.SuspendLayout();
             this.SuspendLayout();
+            // 
+            // PanelToolbar
+            // 
+            this.PanelToolbar.Controls.Add(this.BtnRecargar);
+            this.PanelToolbar.Controls.Add(this.BtnCambiarCarpeta);
+            this.PanelToolbar.Controls.Add(this.BtnIdioma);
+            this.PanelToolbar.Controls.Add(this.BtnAgregarMod);
+            this.PanelToolbar.Controls.Add(this.BtnIniciarPlutonium);
+            this.PanelToolbar.Controls.Add(this.LblVersion);
+            this.PanelToolbar.Location = new System.Drawing.Point(10, 10);
+            this.PanelToolbar.Name = "PanelToolbar";
+            this.PanelToolbar.Size = new System.Drawing.Size(360, 100);
+            this.PanelToolbar.TabIndex = 10;
+            // 
+            // BtnRecargar
+            // 
+            this.BtnRecargar.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.BtnRecargar.Location = new System.Drawing.Point(0, 3);
+            this.BtnRecargar.Name = "BtnRecargar";
+            this.BtnRecargar.Size = new System.Drawing.Size(105, 26);
+            this.BtnRecargar.TabIndex = 0;
+            this.BtnRecargar.Text = "Recargar";
+            this.BtnRecargar.UseVisualStyleBackColor = true;
+            this.BtnRecargar.Click += new System.EventHandler(this.BtnRecargar_Click);
+            // 
+            // BtnCambiarCarpeta
+            // 
+            this.BtnCambiarCarpeta.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.BtnCambiarCarpeta.Location = new System.Drawing.Point(111, 3);
+            this.BtnCambiarCarpeta.Name = "BtnCambiarCarpeta";
+            this.BtnCambiarCarpeta.Size = new System.Drawing.Size(150, 26);
+            this.BtnCambiarCarpeta.TabIndex = 1;
+            this.BtnCambiarCarpeta.Text = "Cambiar carpeta";
+            this.BtnCambiarCarpeta.UseVisualStyleBackColor = true;
+            this.BtnCambiarCarpeta.Click += new System.EventHandler(this.BtnCambiarCarpeta_Click);
+            // 
+            // BtnIdioma
+            // 
+            this.BtnIdioma.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.BtnIdioma.Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Bold);
+            this.BtnIdioma.Location = new System.Drawing.Point(266, 3);
+            this.BtnIdioma.Name = "BtnIdioma";
+            this.BtnIdioma.Size = new System.Drawing.Size(55, 26);
+            this.BtnIdioma.TabIndex = 4;
+            this.BtnIdioma.Text = "EN";
+            this.BtnIdioma.UseVisualStyleBackColor = true;
+            this.BtnIdioma.Click += new System.EventHandler(this.BtnIdioma_Click);
+            // 
+            // BtnAgregarMod
+            // 
+            this.BtnAgregarMod.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.BtnAgregarMod.Location = new System.Drawing.Point(0, 35);
+            this.BtnAgregarMod.Name = "BtnAgregarMod";
+            this.BtnAgregarMod.Size = new System.Drawing.Size(360, 30);
+            this.BtnAgregarMod.TabIndex = 2;
+            this.BtnAgregarMod.Text = "Añadir skin / script";
+            this.BtnAgregarMod.UseVisualStyleBackColor = true;
+            this.BtnAgregarMod.Click += new System.EventHandler(this.BtnAgregarMod_Click);
+            // 
+            // BtnIniciarPlutonium
+            // 
+            this.BtnIniciarPlutonium.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.BtnIniciarPlutonium.Location = new System.Drawing.Point(0, 65);
+            this.BtnIniciarPlutonium.Name = "BtnIniciarPlutonium";
+            this.BtnIniciarPlutonium.Size = new System.Drawing.Size(360, 30);
+            this.BtnIniciarPlutonium.TabIndex = 5;
+            this.BtnIniciarPlutonium.Text = "Iniciar Plutonium";
+            this.BtnIniciarPlutonium.UseVisualStyleBackColor = true;
+            this.BtnIniciarPlutonium.Click += new System.EventHandler(this.BtnIniciarPlutonium_Click);
+            // 
+            // LblVersion
+            // 
+            this.LblVersion.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.LblVersion.AutoSize = true;
+            this.LblVersion.ForeColor = System.Drawing.Color.Gray;
+            this.LblVersion.Location = new System.Drawing.Point(320, 8);
+            this.LblVersion.Name = "LblVersion";
+            this.LblVersion.Size = new System.Drawing.Size(31, 16);
+            this.LblVersion.TabIndex = 3;
+            this.LblVersion.Text = "v1.0";
             // 
             // PanelWeapon
             // 
@@ -85,7 +176,6 @@
             this.WeaponLabel.Size = new System.Drawing.Size(95, 16);
             this.WeaponLabel.TabIndex = 0;
             this.WeaponLabel.Text = "Weapon Skins";
-            this.WeaponLabel.Click += new System.EventHandler(this.label1_Click);
             // 
             // ToggleSwitchWeapons
             // 
@@ -105,7 +195,6 @@
             this.ExpandButtonWeapons.Name = "ExpandButtonWeapons";
             this.ExpandButtonWeapons.Size = new System.Drawing.Size(24, 24);
             this.ExpandButtonWeapons.TabIndex = 2;
-            this.ExpandButtonWeapons.Click += new System.EventHandler(this.ExpandButtonWeapons_Click);
             // 
             // PanelPerks
             // 
@@ -125,7 +214,6 @@
             this.PerksLabel.Size = new System.Drawing.Size(71, 16);
             this.PerksLabel.TabIndex = 0;
             this.PerksLabel.Text = "Perk Skins";
-            this.PerksLabel.Click += new System.EventHandler(this.label1_Click_1);
             // 
             // ToggleSwitchPerks
             // 
@@ -193,7 +281,6 @@
             this.PanelHud.Name = "PanelHud";
             this.PanelHud.Size = new System.Drawing.Size(360, 40);
             this.PanelHud.TabIndex = 8;
-            this.PanelHud.Paint += new System.Windows.Forms.PaintEventHandler(this.panel4_Paint);
             // 
             // HudLabel
             // 
@@ -241,7 +328,6 @@
             this.Gloves.Size = new System.Drawing.Size(50, 16);
             this.Gloves.TabIndex = 0;
             this.Gloves.Text = "Gloves";
-            this.Gloves.Click += new System.EventHandler(this.label4_Click);
             // 
             // ToggleSwitchGloves
             // 
@@ -288,7 +374,6 @@
             this.IconSearchWeapons.Size = new System.Drawing.Size(19, 16);
             this.IconSearchWeapons.TabIndex = 1;
             this.IconSearchWeapons.Text = "🔍";
-            this.IconSearchWeapons.Click += new System.EventHandler(this.IconSearchWeapons_Click);
             // 
             // SearchWeapons
             // 
@@ -401,6 +486,9 @@
             // 
             // DetailHud
             // 
+            this.DetailHud.Controls.Add(this.BtnEditarPosicionHud);
+            this.DetailHud.Controls.Add(this.BtnCambiarIconoHud);
+            this.DetailHud.Controls.Add(this.BtnReinstalarHud);
             this.DetailHud.Controls.Add(this.ItemsHud);
             this.DetailHud.Controls.Add(this.IconSearchHud);
             this.DetailHud.Controls.Add(this.SearchHud);
@@ -411,8 +499,11 @@
             // 
             // ItemsHud
             // 
+            // Se corrió de Y=94 a Y=124 para dejarle lugar arriba a
+            // BtnReinstalarHud (que ahora va debajo de BtnCambiarIconoHud;
+            // el buscador+lista quedan más abajo).
             this.ItemsHud.AutoScroll = true;
-            this.ItemsHud.Location = new System.Drawing.Point(15, 31);
+            this.ItemsHud.Location = new System.Drawing.Point(15, 124);
             this.ItemsHud.Name = "ItemsHud";
             this.ItemsHud.Size = new System.Drawing.Size(322, 111);
             this.ItemsHud.TabIndex = 2;
@@ -433,11 +524,46 @@
             this.SearchHud.Size = new System.Drawing.Size(300, 22);
             this.SearchHud.TabIndex = 0;
             // 
+            // BtnEditarPosicionHud
+            // 
+            this.BtnEditarPosicionHud.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.BtnEditarPosicionHud.Location = new System.Drawing.Point(12, 30);
+            this.BtnEditarPosicionHud.Name = "BtnEditarPosicionHud";
+            this.BtnEditarPosicionHud.Size = new System.Drawing.Size(336, 26);
+            this.BtnEditarPosicionHud.TabIndex = 3;
+            this.BtnEditarPosicionHud.Text = "Editar posición del HUD";
+            this.BtnEditarPosicionHud.UseVisualStyleBackColor = true;
+            this.BtnEditarPosicionHud.Click += new System.EventHandler(this.BtnEditarPosicionHud_Click);
+            // 
+            // BtnCambiarIconoHud
+            // 
+            this.BtnCambiarIconoHud.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.BtnCambiarIconoHud.Location = new System.Drawing.Point(12, 60);
+            this.BtnCambiarIconoHud.Name = "BtnCambiarIconoHud";
+            this.BtnCambiarIconoHud.Size = new System.Drawing.Size(336, 26);
+            this.BtnCambiarIconoHud.TabIndex = 4;
+            this.BtnCambiarIconoHud.Text = "Cambiar ícono del HUD";
+            this.BtnCambiarIconoHud.UseVisualStyleBackColor = true;
+            this.BtnCambiarIconoHud.Click += new System.EventHandler(this.BtnCambiarIconoHud_Click);
+            // 
+            // BtnReinstalarHud
+            // 
+            this.BtnReinstalarHud.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.BtnReinstalarHud.Location = new System.Drawing.Point(12, 90);
+            this.BtnReinstalarHud.Name = "BtnReinstalarHud";
+            this.BtnReinstalarHud.Size = new System.Drawing.Size(336, 26);
+            this.BtnReinstalarHud.TabIndex = 5;
+            this.BtnReinstalarHud.Text = "Restaurar HUD original empaquetado";
+            this.BtnReinstalarHud.UseVisualStyleBackColor = true;
+            this.BtnReinstalarHud.Click += new System.EventHandler(this.BtnReinstalarHud_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(400, 719);
+            this.AutoScroll = true;
+            this.ClientSize = new System.Drawing.Size(400, 799);
+            this.Controls.Add(this.PanelToolbar);
             this.Controls.Add(this.PanelWeapon);
             this.Controls.Add(this.DetailWeapons);
             this.Controls.Add(this.PanelPerks);
@@ -452,7 +578,8 @@
             this.MaximizeBox = false;
             this.Name = "MainForm";
             this.Text = "PHDModManager";
-            this.Load += new System.EventHandler(this.Form1_Load);
+            this.PanelToolbar.ResumeLayout(false);
+            this.PanelToolbar.PerformLayout();
             this.PanelWeapon.ResumeLayout(false);
             this.PanelWeapon.PerformLayout();
             this.PanelPerks.ResumeLayout(false);
@@ -477,6 +604,13 @@
 
         }
 
+        private System.Windows.Forms.Panel PanelToolbar;
+        private System.Windows.Forms.Button BtnRecargar;
+        private System.Windows.Forms.Button BtnCambiarCarpeta;
+        private System.Windows.Forms.Button BtnIdioma;
+        private System.Windows.Forms.Button BtnAgregarMod;
+        private System.Windows.Forms.Button BtnIniciarPlutonium;
+        private System.Windows.Forms.Label LblVersion;
         private System.Windows.Forms.Panel PanelWeapon;
         private System.Windows.Forms.Label WeaponLabel;
         private ToggleSwitch ToggleSwitchWeapons;
@@ -517,5 +651,8 @@
         private System.Windows.Forms.Panel ItemsHud;
         private System.Windows.Forms.Label IconSearchHud;
         private System.Windows.Forms.TextBox SearchHud;
+        private System.Windows.Forms.Button BtnEditarPosicionHud;
+        private System.Windows.Forms.Button BtnCambiarIconoHud;
+        private System.Windows.Forms.Button BtnReinstalarHud;
     }
 }

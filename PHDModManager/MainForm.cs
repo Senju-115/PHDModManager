@@ -5,8 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace PHDModManager
@@ -17,9 +16,6 @@ namespace PHDModManager
         {
             public Panel Header;
             public Panel Detail;
-            public ExpandButton ExpandBtn;
-            public int TargetHeight;
-            public Timer AnimTimer;
         }
 
         private class ModItem
@@ -27,22 +23,63 @@ namespace PHDModManager
             public string Key;
             public string DisplayName;
             public bool Instalado;
+
+            // True si el archivo ya existe en algún lado (carpeta activa o
+            // backup). Para la mayoría de las categorías esto siempre es true
+            // porque PrepararItems/PrepararItemsScripts solo agregan el item
+            // si ya encontraron el archivo. HUD Player es la excepción: ahora
+            // el item aparece SIEMPRE, así que puede valer false (todavía no
+            // instalado) y la fila muestra un botón "Instalar" en vez del
+            // toggle + botón de borrado.
+            public bool Presente = true;
         }
 
-        private List<CategoryGroup> categorias = new List<CategoryGroup>();
+        private readonly List<CategoryGroup> categorias = new List<CategoryGroup>();
         private const int Spacing = 10;
+
+        // Estado auxiliar de PoblarLista: permite llamarla varias veces (recarga)
+        // sin duplicar los eventos de búsqueda / toggle maestro por categoría.
+        private readonly Dictionary<Panel, bool[]> _flagsSincronizacion = new Dictionary<Panel, bool[]>();
+        private readonly HashSet<Panel> _listasEnganchadas = new HashSet<Panel>();
 
         private string carpetaImages;
         private string carpetaBackup;
         private string carpetaScripts;
         private string carpetaBackupScripts;
-        private string carpetaLibreria;
 
         private const string ArchivoHudCustomizable = "HudPlayerCustomizable.gsc";
+
+        // Nombre completo del recurso embebido (namespace por defecto del
+        // proyecto + carpeta "Recursos" + nombre de archivo, con puntos en
+        // vez de barras). Si el namespace por defecto del proyecto NO es
+        // "PHDModManager", o si el archivo se pone en otra carpeta, hay que
+        // ajustar esta cadena. Para confirmar el nombre exacto en caso de
+        // duda, se puede recorrer Assembly.GetExecutingAssembly().GetManifestResourceNames()
+        // una vez y ver qué imprime.
+        private const string RecursoHudCustomizable = "PHDModManager.Recursos.HudPlayerCustomizable.gsc";
+
+        // Nombre fijo del material/ícono del HUD (character portrait) que usan
+        // las 4 funciones de HudPlayerCustomizable.gsc vía setshader(...).
+        // Este archivo NO existe por defecto en carpetaImages (el original
+        // vive compilado dentro de los assets del juego); el botón "Cambiar
+        // ícono del HUD" simplemente copia el .iwi elegido con este nombre,
+        // sobrescribiendo lo que hubiera antes. El código del .gsc nunca se
+        // toca para esto: siempre sigue apuntando a este mismo nombre.
+        private const string NombreArchivoIconoHud = "zombies_rank_3_ded.iwi";
 
         private static readonly string RutaConfig = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "PHDModManager", "config.txt"
+        );
+
+        private static readonly string RutaConfigIdioma = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "PHDModManager", "idioma.txt"
+        );
+
+        private static readonly string RutaLog = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "PHDModManager", "log.txt"
         );
 
         // ============================
@@ -268,7 +305,100 @@ namespace PHDModManager
         public MainForm()
         {
             InitializeComponent();
+
+            AplicarTemaOscuro();
+            AplicarTemaBarraTitulo();
+            AplicarTemaBarrasDesplazamiento();
+
+            // Cargar y aplicar el idioma guardado ANTES de armar el acordeón,
+            // para que todo aparezca ya en el idioma correcto desde el arranque.
+            Textos.IdiomaActual = CargarIdiomaGuardado();
+            AplicarIdioma();
+
             ConfigurarAcordeon();
+        }
+
+        // ============================
+        // TEMA OSCURO (paleta estilo Windows 10 Dark)
+        // ============================
+        private static readonly Color ColorFondo = Color.FromArgb(32, 32, 32);
+        private static readonly Color ColorPanel = Color.FromArgb(43, 43, 43);
+        private static readonly Color ColorControlInterno = Color.FromArgb(51, 51, 51);
+        private static readonly Color ColorBorde = Color.FromArgb(63, 63, 63);
+        private static readonly Color ColorTexto = Color.FromArgb(241, 241, 241);
+        private static readonly Color ColorTextoSecundario = Color.FromArgb(155, 155, 155);
+        private static readonly Color ColorBotonFondo = Color.FromArgb(60, 60, 60);
+        private static readonly Color ColorBotonHover = Color.FromArgb(78, 78, 78);
+        private static readonly Color ColorAcento = Color.FromArgb(0, 120, 215);
+        private static readonly Color ColorEliminar = Color.FromArgb(232, 90, 90);
+
+        // Aplica la paleta oscura a todos los controles estáticos del
+        // diseñador. Las filas que se arman dinámicamente en PoblarLista se
+        // pintan ahí mismo con las mismas constantes, porque no existen
+        // todavía en este punto (se crean recién al llamar RecargarTodo).
+        private void AplicarTemaOscuro()
+        {
+            BackColor = ColorFondo;
+
+            foreach (var cabecera in new[] { PanelWeapon, PanelPerks, PanelGloves, PanelScripts, PanelHud })
+                TemarPanelCabecera(cabecera);
+
+            PanelToolbar.BackColor = ColorPanel;
+
+            foreach (var detalle in new[] { DetailWeapons, DetailPerks, DetailGlove, DetailScripts, DetailHud })
+                TemarPanelDetalle(detalle);
+
+            foreach (var lista in new[] { ItemsWeapons, ItemsPerks, ItemsGloves, ItemsScripts, ItemsHud })
+                lista.BackColor = ColorControlInterno;
+
+            foreach (var caja in new[] { SearchWeapons, SearchPerks, SearchGloves, SearchScripts, SearchHud })
+                TemarTextBox(caja);
+
+            foreach (var boton in new Button[] { BtnRecargar, BtnCambiarCarpeta, BtnAgregarMod, BtnIniciarPlutonium, BtnIdioma, BtnEditarPosicionHud, BtnCambiarIconoHud, BtnReinstalarHud })
+                TemarBoton(boton);
+
+            foreach (var icono in new[] { IconSearchWeapons, IconSearchPerks, IconSearchGloves, IconSearchScripts, IconSearchHud })
+            {
+                icono.ForeColor = ColorTextoSecundario;
+                icono.BackColor = Color.Transparent;
+            }
+
+            LblVersion.ForeColor = ColorTextoSecundario;
+        }
+
+        private void TemarPanelCabecera(Panel panel)
+        {
+            panel.BackColor = ColorPanel;
+            foreach (Control c in panel.Controls)
+            {
+                if (c is Label lbl)
+                {
+                    lbl.ForeColor = ColorTexto;
+                    lbl.BackColor = Color.Transparent;
+                }
+            }
+        }
+
+        private void TemarPanelDetalle(Panel panel)
+        {
+            panel.BackColor = ColorFondo;
+        }
+
+        private void TemarTextBox(TextBox caja)
+        {
+            caja.BackColor = ColorControlInterno;
+            caja.ForeColor = ColorTexto;
+            caja.BorderStyle = BorderStyle.FixedSingle;
+        }
+
+        private void TemarBoton(Button boton)
+        {
+            boton.FlatStyle = FlatStyle.Flat;
+            boton.BackColor = ColorBotonFondo;
+            boton.ForeColor = ColorTexto;
+            boton.FlatAppearance.BorderColor = ColorBorde;
+            boton.FlatAppearance.MouseOverBackColor = ColorBotonHover;
+            boton.FlatAppearance.MouseDownBackColor = ColorAcento;
         }
 
         private void ConfigurarAcordeon()
@@ -277,7 +407,11 @@ namespace PHDModManager
             AgregarCategoria(PanelPerks, DetailPerks, ExpandButtonPerks, 140);
             AgregarCategoria(PanelGloves, DetailGlove, ExpandButtonGloves, 120);
             AgregarCategoria(PanelScripts, DetailScripts, ExpandButtonScripts, 90);
-            AgregarCategoria(PanelHud, DetailHud, ExpandButtonHud, 90);
+            // 240: antes era 210, pero ahora DetailHud también contiene el
+            // botón "Restaurar HUD original empaquetado" además de "Editar
+            // posición del HUD", "Cambiar ícono del HUD", el buscador y la
+            // lista.
+            AgregarCategoria(PanelHud, DetailHud, ExpandButtonHud, 240);
 
             RepositionAll();
 
@@ -303,34 +437,217 @@ namespace PHDModManager
             );
             Directory.CreateDirectory(carpetaBackupScripts);
 
-            carpetaLibreria = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "PHDModManager", "SkinLibrary"
-            );
-            Directory.CreateDirectory(carpetaLibreria);
+            RecargarTodo();
+        }
 
+        // ============================
+        // IDIOMA (ES/EN) — diccionario en código, sin .resx
+        // ============================
+        private Idioma CargarIdiomaGuardado()
+        {
+            try
+            {
+                if (File.Exists(RutaConfigIdioma))
+                {
+                    string contenido = File.ReadAllText(RutaConfigIdioma).Trim();
+                    if (contenido.Equals("EN", StringComparison.OrdinalIgnoreCase))
+                        return Idioma.Ingles;
+                }
+            }
+            catch (Exception ex)
+            {
+                RegistrarError("CargarIdiomaGuardado", ex);
+            }
+            return Idioma.Espanol;
+        }
+
+        private void GuardarIdioma(Idioma idioma)
+        {
+            try
+            {
+                string carpetaConfig = Path.GetDirectoryName(RutaConfigIdioma);
+                Directory.CreateDirectory(carpetaConfig);
+                File.WriteAllText(RutaConfigIdioma, idioma == Idioma.Ingles ? "EN" : "ES");
+            }
+            catch (Exception ex)
+            {
+                RegistrarError("GuardarIdioma", ex);
+            }
+        }
+
+        // Aplica el idioma actual a todos los controles de UI estática
+        // (labels de categoría, botones de la barra, placeholders de
+        // búsqueda). Los nombres de armas/perks/guantes individuales NO se
+        // tocan acá porque son nombres propios del juego, no texto de UI.
+        private void AplicarIdioma()
+        {
+            WeaponLabel.Text = Textos.T("CatArmas");
+            PerksLabel.Text = Textos.T("CatPerks");
+            Gloves.Text = Textos.T("CatGuantes");
+            ScriptsLabel.Text = Textos.T("CatScripts");
+            HudLabel.Text = Textos.T("CatHud");
+
+            BtnRecargar.Text = Textos.T("BtnRecargar");
+            BtnCambiarCarpeta.Text = Textos.T("BtnCambiarCarpeta");
+            BtnAgregarMod.Text = Textos.T("BtnAgregarMod");
+            BtnIdioma.Text = Textos.IdiomaActual == Idioma.Espanol ? "EN" : "ES";
+            BtnEditarPosicionHud.Text = Textos.T("BtnEditarPosicionHud");
+            BtnCambiarIconoHud.Text = Textos.T("BtnCambiarIconoHud");
+            BtnReinstalarHud.Text = Textos.T("BtnReinstalarHud");
+            BtnIniciarPlutonium.Text = Textos.T("BtnIniciarPlutonium");
+
+            SetPlaceholder(SearchWeapons, Textos.T("PlaceholderBuscarArma"));
+            SetPlaceholder(SearchPerks, Textos.T("PlaceholderBuscarPerk"));
+            SetPlaceholder(SearchGloves, Textos.T("PlaceholderBuscarGuante"));
+            SetPlaceholder(SearchScripts, Textos.T("PlaceholderBuscarScript"));
+            SetPlaceholder(SearchHud, Textos.T("PlaceholderBuscarHud"));
+        }
+
+        private void BtnIdioma_Click(object sender, EventArgs e)
+        {
+            Textos.IdiomaActual = Textos.IdiomaActual == Idioma.Espanol ? Idioma.Ingles : Idioma.Espanol;
+            GuardarIdioma(Textos.IdiomaActual);
+            AplicarIdioma();
+        }
+
+        // Placeholder nativo de TextBox vía Win32 (EM_SETCUEBANNER). Se usa en
+        // vez de manejar foco/blur a mano, y desaparece solo al escribir.
+        private const int EM_SETCUEBANNER = 0x1501;
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, string lParam);
+
+        // ============================
+        // BARRAS DE DESPLAZAMIENTO ESTILO EXPLORADOR (dark mode)
+        // ============================
+        // SetWindowTheme con la clase "DarkMode_Explorer" hace que las
+        // scrollbars nativas de Win32 (las que usan Form/Panel cuando
+        // AutoScroll = true) se dibujen igual que en el Explorador de
+        // archivos en modo oscuro: delgadas, sin flechas remarcadas y con
+        // los mismos grises. Requiere Application.EnableVisualStyles() (ya
+        // está en Program.cs) y Windows 10 1809+ / Windows 11; en versiones
+        // más viejas simplemente no tiene efecto y queda la scrollbar clásica.
+        [DllImport("uxtheme.dll", CharSet = CharSet.Unicode)]
+        private static extern int SetWindowTheme(IntPtr hWnd, string pszSubAppName, string pszSubIdList);
+
+        // ============================
+        // BARRA DE TÍTULO OSCURA + TRASLÚCIDA (DWM, Windows 11 22000+)
+        // ============================
+        // DWMWA_USE_IMMERSIVE_DARK_MODE pone la barra de título en modo
+        // oscuro. DWMWA_SYSTEMBACKDROP_TYPE = Mica es lo que da el efecto
+        // traslúcido/difuminado como en el Explorador de archivos.
+        //
+        // IMPORTANTE: NO se fuerza DWMWA_CAPTION_COLOR. Si se fija un color
+        // sólido ahí, Windows pinta la barra de título plana y tapa el
+        // efecto Mica - no se pueden combinar. Dejando que Windows elija el
+        // color (según el tema del sistema) es la única forma de que se vea
+        // difuminado.
+        //
+        // LIMITACIÓN: esto solo difumina la BARRA DE TÍTULO (zona no
+        // cliente). El resto de la ventana (los paneles oscuros que
+        // dibujamos con AplicarTemaOscuro) sigue siendo opaco: WinForms
+        // pinta sus controles con un color sólido, y Mica solo se ve donde
+        // no hay nada pintado encima. Para que TODA la ventana se vea
+        // traslúcida como el fondo del Explorador (detrás de la lista de
+        // archivos) haría falta reescribir cómo se pintan los paneles para
+        // dejar huecos transparentes — mucho más trabajo, y muchos WinForms
+        // no soportan bien ese truco. Avisame si querés que lo intentemos.
+        private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+        private const int DWMWA_BORDER_COLOR = 34;
+        private const int DWMWA_SYSTEMBACKDROP_TYPE = 38;
+        private const int DWMSBT_MAINWINDOW = 2; // Mica
+
+        [DllImport("dwmapi.dll")]
+        private static extern int DwmSetWindowAttribute(IntPtr hwnd, int dwAttribute, ref int pvAttribute, int cbAttribute);
+
+        private static int ColorAColorRef(Color color) => color.R | (color.G << 8) | (color.B << 16);
+
+        private void AplicarTemaBarraTitulo()
+        {
+            try
+            {
+                int usarOscuro = 1;
+                DwmSetWindowAttribute(Handle, DWMWA_USE_IMMERSIVE_DARK_MODE, ref usarOscuro, sizeof(int));
+
+                int colorBorde = ColorAColorRef(ColorBorde);
+                DwmSetWindowAttribute(Handle, DWMWA_BORDER_COLOR, ref colorBorde, sizeof(int));
+
+                int backdrop = DWMSBT_MAINWINDOW;
+                DwmSetWindowAttribute(Handle, DWMWA_SYSTEMBACKDROP_TYPE, ref backdrop, sizeof(int));
+            }
+            catch
+            {
+                // dwmapi.dll no disponible, Mica no soportado (Windows 10 o
+                // Windows 11 viejo) o atributo desconocido: se queda con la
+                // barra de título clásica, sin romper nada.
+            }
+        }
+
+        private void TemarBarraDesplazamiento(Control control)
+        {
+            void Aplicar(object s, EventArgs e) => SetWindowTheme(control.Handle, "DarkMode_Explorer", null);
+
+            if (control.IsHandleCreated)
+            {
+                Aplicar(null, EventArgs.Empty);
+            }
+
+            // Si el handle se recrea (pasa en algunos casos con AutoScroll),
+            // hay que volver a aplicarlo o se pierde el tema.
+            control.HandleCreated += Aplicar;
+        }
+
+        private void AplicarTemaBarrasDesplazamiento()
+        {
+            TemarBarraDesplazamiento(this);
+
+            foreach (var lista in new Panel[] { ItemsWeapons, ItemsPerks, ItemsGloves, ItemsScripts, ItemsHud })
+                TemarBarraDesplazamiento(lista);
+        }
+
+        private static void SetPlaceholder(TextBox caja, string texto)
+        {
+            if (caja == null) return;
+            SendMessage(caja.Handle, EM_SETCUEBANNER, IntPtr.Zero, texto);
+        }
+
+        // ============================
+        // RECARGA (usada al iniciar, al tocar "Recargar" y al cambiar de carpeta)
+        // ============================
+        private void RecargarTodo()
+        {
             var itemsWeapons = PrepararItems(NombresArmas);
-            PoblarListaConVariantes(ItemsWeapons, SearchWeapons, itemsWeapons, "Weapons", ToggleSwitchWeapons);
+            PoblarLista(ItemsWeapons, SearchWeapons, itemsWeapons, AplicarEstadoMod, EliminarMod, ToggleSwitchWeapons);
 
             var itemsPerks = PrepararItems(NombresPerks);
-            PoblarLista(ItemsPerks, SearchPerks, itemsPerks, AplicarEstadoMod, ToggleSwitchPerks);
+            PoblarLista(ItemsPerks, SearchPerks, itemsPerks, AplicarEstadoMod, EliminarMod, ToggleSwitchPerks);
 
             var itemsScripts = PrepararItemsScripts();
-            PoblarLista(ItemsScripts, SearchScripts, itemsScripts, AplicarEstadoScript, ToggleSwitchScripts);
+            PoblarLista(ItemsScripts, SearchScripts, itemsScripts, AplicarEstadoScript, EliminarScript, ToggleSwitchScripts);
 
             var itemsGuantes = PrepararItems(NombresGuantes);
-            PoblarLista(ItemsGloves, SearchGloves, itemsGuantes, AplicarEstadoMod, ToggleSwitchGloves);
+            PoblarLista(ItemsGloves, SearchGloves, itemsGuantes, AplicarEstadoMod, EliminarMod, ToggleSwitchGloves);
 
             var itemsHud = PrepararItemsHud();
-            PoblarLista(ItemsHud, SearchHud, itemsHud, AplicarEstadoScript, ToggleSwitchHud);
+            PoblarLista(ItemsHud, SearchHud, itemsHud, AplicarEstadoScript, EliminarScript, ToggleSwitchHud, InstalarHudEmpaquetado);
         }
 
         private string ResolverCarpetaBaseT6()
         {
             string rutaGuardada = CargarRutaGuardada();
-            if (!string.IsNullOrEmpty(rutaGuardada) && Directory.Exists(rutaGuardada))
+            if (!string.IsNullOrEmpty(rutaGuardada))
             {
-                return rutaGuardada;
+                if (Directory.Exists(rutaGuardada))
+                {
+                    return rutaGuardada;
+                }
+
+                MessageBox.Show(
+                    Textos.T("MsgCarpetaGuardadaNoExiste"),
+                    Textos.T("TituloCarpetaGuardadaNoExiste"),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information
+                );
             }
 
             string rutaEstandar = Path.Combine(
@@ -345,31 +662,255 @@ namespace PHDModManager
             }
 
             var resultado = MessageBox.Show(
-                "No se encontró la carpeta de Plutonium en la ubicación estándar.\n¿Querés seleccionarla manualmente?",
-                "Carpeta no encontrada",
+                Textos.T("MsgCarpetaNoEncontrada"),
+                Textos.T("TituloCarpetaNoEncontrada"),
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning
             );
 
             if (resultado != DialogResult.Yes)
             {
-                MessageBox.Show("Instalá Plutonium primero, o volvé a abrir la app y seleccioná la carpeta.");
+                MessageBox.Show(Textos.T("MsgInstalarPlutoniumPrimero"));
                 return null;
             }
 
             using (var dialog = new FolderBrowserDialog())
             {
-                dialog.Description = "Seleccioná la carpeta 't6' dentro de Plutonium\\storage (contiene 'images' y 'scripts')";
+                dialog.Description = Textos.T("DescripcionCarpetaT6");
 
                 if (dialog.ShowDialog() != DialogResult.OK)
                 {
-                    MessageBox.Show("No se puede continuar sin la carpeta de Plutonium.");
+                    MessageBox.Show(Textos.T("MsgNoSePuedeContinuarSinCarpeta"));
                     return null;
                 }
 
                 string rutaElegida = dialog.SelectedPath;
                 GuardarRuta(rutaElegida);
                 return rutaElegida;
+            }
+        }
+
+        // ============================
+        // BOTONES DE LA BARRA SUPERIOR (Recargar / Cambiar carpeta)
+        // ============================
+        private void BtnRecargar_Click(object sender, EventArgs e)
+        {
+            RecargarTodo();
+        }
+
+        private static readonly string RutaPlutoniumBootstrapper = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Plutonium", "bin", "plutonium-bootstrapper-win-x64.exe"
+        );
+
+        private void BtnIniciarPlutonium_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (!File.Exists(RutaPlutoniumBootstrapper))
+                {
+                    MessageBox.Show(
+                        Textos.T("MsgPlutoniumNoEncontrado"),
+                        Textos.T("TituloPlutoniumNoEncontrado"),
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning
+                    );
+                    return;
+                }
+
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = RutaPlutoniumBootstrapper,
+                    WorkingDirectory = Path.GetDirectoryName(RutaPlutoniumBootstrapper)
+                });
+            }
+            catch (Exception ex)
+            {
+                RegistrarError("BtnIniciarPlutonium_Click", ex);
+                MessageBox.Show(
+                    Textos.F("MsgErrorIniciarPlutonium", ex.Message),
+                    Textos.T("TituloErrorIniciarPlutonium"),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning
+                );
+            }
+        }
+
+        private void BtnCambiarCarpeta_Click(object sender, EventArgs e)
+        {
+            using (var dialog = new FolderBrowserDialog())
+            {
+                dialog.Description = Textos.T("DescripcionCarpetaT6");
+
+                if (dialog.ShowDialog() != DialogResult.OK)
+                {
+                    return;
+                }
+
+                string nuevaRuta = dialog.SelectedPath;
+                GuardarRuta(nuevaRuta);
+
+                carpetaImages = Path.Combine(nuevaRuta, "images");
+                carpetaScripts = Path.Combine(nuevaRuta, "scripts", "zm");
+
+                RecargarTodo();
+            }
+        }
+
+        // Copia uno o más archivos a la carpeta correcta según su extensión:
+        // .gsc -> carpeta de scripts, .iwi -> carpeta de images (skins de
+        // armas, perks y guantes comparten la misma carpeta de imágenes).
+        private void BtnAgregarMod_Click(object sender, EventArgs e)
+        {
+            using (var openDialog = new OpenFileDialog())
+            {
+                openDialog.Title = Textos.T("TituloSeleccionarArchivos");
+                openDialog.Filter =
+                    $"{Textos.T("FiltroSkinsScripts")} (*.iwi;*.gsc)|*.iwi;*.gsc|" +
+                    $"{Textos.T("FiltroSkins")} (*.iwi)|*.iwi|" +
+                    $"{Textos.T("FiltroScripts")} (*.gsc)|*.gsc|" +
+                    $"{Textos.T("FiltroTodos")} (*.*)|*.*";
+                openDialog.Multiselect = true;
+
+                if (openDialog.ShowDialog() != DialogResult.OK) return;
+
+                int copiados = 0;
+                var errores = new List<string>();
+
+                foreach (var rutaOrigen in openDialog.FileNames)
+                {
+                    string nombreArchivo = Path.GetFileName(rutaOrigen);
+                    string extension = Path.GetExtension(rutaOrigen).ToLowerInvariant();
+
+                    string carpetaDestino;
+                    if (extension == ".gsc")
+                    {
+                        carpetaDestino = carpetaScripts;
+                    }
+                    else if (extension == ".iwi")
+                    {
+                        carpetaDestino = carpetaImages;
+                    }
+                    else
+                    {
+                        errores.Add(Textos.F("ExtensionNoReconocida", nombreArchivo));
+                        continue;
+                    }
+
+                    try
+                    {
+                        Directory.CreateDirectory(carpetaDestino);
+                        string destino = Path.Combine(carpetaDestino, nombreArchivo);
+                        File.Copy(rutaOrigen, destino, true);
+                        copiados++;
+                    }
+                    catch (Exception ex)
+                    {
+                        RegistrarError($"BtnAgregarMod({nombreArchivo})", ex);
+                        errores.Add(nombreArchivo);
+                    }
+                }
+
+                RecargarTodo();
+
+                if (errores.Count > 0)
+                {
+                    MessageBox.Show(
+                        Textos.F("MsgAgregadosConErrores", copiados, string.Join("\n", errores)),
+                        Textos.T("TituloAlgunosNoAgregados"),
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning
+                    );
+                }
+                else if (copiados > 0)
+                {
+                    MessageBox.Show(
+                        Textos.F("MsgAgregadosOk", copiados),
+                        Textos.T("TituloListo"),
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information
+                    );
+                }
+            }
+        }
+
+        // ============================
+        // EDITOR DE POSICIÓN DEL HUD
+        // ============================
+        // Abre HudPositionEditorForm apuntando al HudPlayerCustomizable.gsc
+        // real, ya sea que esté activo (carpetaScripts) o desactivado
+        // (carpetaBackupScripts). Al guardar, el editor llama a RecargarTodo
+        // para refrescar la UI (por si el estado activo/inactivo cambió).
+        private void BtnEditarPosicionHud_Click(object sender, EventArgs e)
+        {
+            string rutaEnScripts = Path.Combine(carpetaScripts, ArchivoHudCustomizable);
+            string rutaEnBackup = Path.Combine(carpetaBackupScripts, ArchivoHudCustomizable);
+
+            string ruta =
+                File.Exists(rutaEnScripts) ? rutaEnScripts :
+                File.Exists(rutaEnBackup) ? rutaEnBackup :
+                null;
+
+            if (ruta == null)
+            {
+                MessageBox.Show(
+                    Textos.T("MsgArchivoHudNoEncontrado"),
+                    Textos.T("TituloArchivoHudNoEncontrado"),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning
+                );
+                return;
+            }
+
+            using (var editor = new HudPositionEditorForm(ruta, RecargarTodo))
+            {
+                editor.ShowDialog(this);
+            }
+        }
+
+        // ============================
+        // ÍCONO DEL HUD (character portrait)
+        // ============================
+        // A diferencia de las skins de armas/perks, este archivo NO existe por
+        // defecto en carpetaImages (el original vive compilado dentro de los
+        // assets del juego). Elegir un .iwi acá simplemente lo copia con el
+        // nombre fijo NombreArchivoIconoHud, sobrescribiendo lo que hubiera
+        // antes. No hay "restablecer": si ya se sobrescribió una vez, no hay
+        // forma de recuperar el original desde acá (el código del .gsc nunca
+        // se toca, así que siempre sigue apuntando a este mismo material).
+        private void BtnCambiarIconoHud_Click(object sender, EventArgs e)
+        {
+            using (var openDialog = new OpenFileDialog())
+            {
+                openDialog.Title = Textos.T("TituloSeleccionarIconoHud");
+                openDialog.Filter = $"{Textos.T("FiltroIconoHud")} (*.iwi)|*.iwi";
+                openDialog.Multiselect = false;
+
+                if (openDialog.ShowDialog() != DialogResult.OK) return;
+
+                try
+                {
+                    Directory.CreateDirectory(carpetaImages);
+                    string destino = Path.Combine(carpetaImages, NombreArchivoIconoHud);
+                    File.Copy(openDialog.FileName, destino, true);
+
+                    MessageBox.Show(
+                        Textos.T("MsgIconoHudCambiado"),
+                        Textos.T("TituloListo"),
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information
+                    );
+                }
+                catch (Exception ex)
+                {
+                    RegistrarError("BtnCambiarIconoHud_Click", ex);
+                    MessageBox.Show(
+                        Textos.F("MsgErrorCambiarIconoHud", ex.Message),
+                        Textos.T("TituloErrorCambiarIconoHud"),
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning
+                    );
+                }
             }
         }
 
@@ -383,8 +924,9 @@ namespace PHDModManager
                     return string.IsNullOrWhiteSpace(contenido) ? null : contenido;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                RegistrarError("CargarRutaGuardada", ex);
             }
             return null;
         }
@@ -397,8 +939,28 @@ namespace PHDModManager
                 Directory.CreateDirectory(carpetaConfig);
                 File.WriteAllText(RutaConfig, ruta);
             }
+            catch (Exception ex)
+            {
+                RegistrarError("GuardarRuta", ex);
+            }
+        }
+
+        // ============================
+        // LOG DE ERRORES (para poder diagnosticar reportes del foro)
+        // ============================
+        private void RegistrarError(string contexto, Exception ex)
+        {
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(RutaLog));
+                File.AppendAllText(
+                    RutaLog,
+                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {contexto}: {ex.Message}{Environment.NewLine}"
+                );
+            }
             catch
             {
+                // Si ni siquiera se puede escribir el log, no hay mucho más para hacer acá.
             }
         }
 
@@ -408,7 +970,7 @@ namespace PHDModManager
             detail.Visible = true;
 
             var timer = new Timer { Interval = 10 };
-            var group = new CategoryGroup { Header = header, Detail = detail, ExpandBtn = btn, TargetHeight = targetHeight, AnimTimer = timer };
+            var group = new CategoryGroup { Header = header, Detail = detail };
 
             timer.Tick += (s, e) =>
             {
@@ -435,9 +997,12 @@ namespace PHDModManager
             categorias.Add(group);
         }
 
+        // Alto de PanelToolbar (10 arriba + 70 de alto + 10 de separación)
+        private const int ContentTop = 120;
+
         private void RepositionAll()
         {
-            int y = 10;
+            int y = ContentTop;
             foreach (var g in categorias)
             {
                 g.Header.Location = new Point(10, y);
@@ -446,6 +1011,11 @@ namespace PHDModManager
                 y += g.Detail.Height;
                 y += Spacing;
             }
+
+            // Le avisa al form cuánto espacio necesita el contenido para que
+            // aparezca el scroll vertical cuando el acordeón crece más allá
+            // del alto visible de la ventana.
+            this.AutoScrollMinSize = new Size(0, y + 10);
         }
 
         // ============================
@@ -511,137 +1081,43 @@ namespace PHDModManager
             }
             catch (Exception ex)
             {
+                RegistrarError($"AplicarEstadoMod({key})", ex);
                 MessageBox.Show(
-                    "No se pudo mover el archivo del mod. Cerrá el juego si está abierto e intentá de nuevo.\n\n" + ex.Message,
-                    "Error al aplicar el mod",
+                    Textos.F("MsgErrorMoverMod", ex.Message),
+                    Textos.T("TituloErrorAplicarMod"),
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning
                 );
             }
         }
 
-        // ============================
-        // SISTEMA DE VARIANTES (múltiples skins por ítem)
-        // ============================
-        private string CarpetaVariantes(string categoria, string key)
+        // Borra TODOS los archivos asociados al token (arma/perk/guante puede
+        // requerir varios archivos), estén activos en carpetaImages o
+        // guardados en el backup. Es un borrado definitivo, no un toggle.
+        private void EliminarMod(string key)
         {
-            string ruta = Path.Combine(carpetaLibreria, categoria, key);
-            Directory.CreateDirectory(ruta);
-            return ruta;
-        }
-
-        private List<string> ObtenerVariantes(string categoria, string key)
-        {
-            string carpeta = CarpetaVariantes(categoria, key);
-            return Directory.GetDirectories(carpeta).Select(Path.GetFileName).OrderBy(n => n).ToList();
-        }
-
-        private string RutaEstadoVariantes => Path.Combine(carpetaLibreria, "estado_variantes.txt");
-
-        private string ObtenerVarianteActivaActual(string categoria, string key)
-        {
-            if (!File.Exists(RutaEstadoVariantes)) return null;
-            string prefijo = $"{categoria}|{key}|";
-            foreach (var linea in File.ReadAllLines(RutaEstadoVariantes))
-            {
-                if (linea.StartsWith(prefijo))
-                    return linea.Substring(prefijo.Length);
-            }
-            return null;
-        }
-
-        private void GuardarVarianteActiva(string categoria, string key, string nombreVariante)
-        {
-            Directory.CreateDirectory(carpetaLibreria);
-            string prefijo = $"{categoria}|{key}|";
-            var lineas = File.Exists(RutaEstadoVariantes)
-                ? File.ReadAllLines(RutaEstadoVariantes).Where(l => !l.StartsWith(prefijo)).ToList()
-                : new List<string>();
-            lineas.Add(prefijo + nombreVariante);
-            File.WriteAllLines(RutaEstadoVariantes, lineas);
-        }
-
-        private void RespaldarSkinActual(string categoria, string key, string token)
-        {
-            var actuales = ObtenerArchivosCoincidentes(carpetaImages, token);
-            if (actuales.Count == 0) return;
-
-            string nombreVariante = ObtenerVarianteActivaActual(categoria, key) ?? "Original";
-            string carpetaDestino = Path.Combine(CarpetaVariantes(categoria, key), nombreVariante);
-            Directory.CreateDirectory(carpetaDestino);
-
-            foreach (var archivo in actuales)
-            {
-                string destino = Path.Combine(carpetaDestino, Path.GetFileName(archivo));
-                if (File.Exists(destino)) File.Delete(destino);
-                File.Move(archivo, destino);
-            }
-        }
-
-        private void AplicarVariante(string categoria, string key, string token, string nombreVariante)
-        {
-            RespaldarSkinActual(categoria, key, token);
-
-            string carpetaOrigen = Path.Combine(CarpetaVariantes(categoria, key), nombreVariante);
-            if (!Directory.Exists(carpetaOrigen)) return;
-
-            foreach (var archivo in Directory.GetFiles(carpetaOrigen))
-            {
-                string destino = Path.Combine(carpetaImages, Path.GetFileName(archivo));
-                File.Move(archivo, destino);
-            }
-
-            GuardarVarianteActiva(categoria, key, nombreVariante);
-        }
-
-        private void EliminarVariante(string categoria, string key, string nombreVariante)
-        {
-            if (ObtenerVarianteActivaActual(categoria, key) == nombreVariante)
-            {
-                MessageBox.Show("No podés eliminar la skin que está puesta actualmente. Cambiá a otra primero.");
+            if (!TokenArchivo.TryGetValue(key, out string token))
                 return;
-            }
 
-            string carpeta = Path.Combine(CarpetaVariantes(categoria, key), nombreVariante);
-            if (Directory.Exists(carpeta))
+            try
             {
-                Directory.Delete(carpeta, true);
+                var archivos = ObtenerArchivosCoincidentes(carpetaImages, token)
+                    .Concat(ObtenerArchivosCoincidentes(carpetaBackup, token));
+
+                foreach (var archivo in archivos)
+                {
+                    File.Delete(archivo);
+                }
             }
-        }
-
-        private void ImportarSkin(string categoria, string key, string token, Action refrescarVista)
-        {
-            using (var openDialog = new OpenFileDialog())
+            catch (Exception ex)
             {
-                openDialog.Title = "Seleccioná el archivo de la skin (.iwi)";
-                openDialog.Filter = "Archivos IWI (*.iwi)|*.iwi|Todos los archivos (*.*)|*.*";
-
-                if (openDialog.ShowDialog() != DialogResult.OK) return;
-
-                string nombre = Microsoft.VisualBasic.Interaction.InputBox(
-                    "Nombre para esta skin (ej. Dorada, Neon, Camuflaje):",
-                    "Nombre de la skin", "");
-
-                if (string.IsNullOrWhiteSpace(nombre)) return;
-
-                try
-                {
-                    RespaldarSkinActual(categoria, key, token);
-
-                    string carpetaDestino = Path.Combine(CarpetaVariantes(categoria, key), nombre);
-                    Directory.CreateDirectory(carpetaDestino);
-
-                    string nombreArchivo = Path.GetFileName(openDialog.FileName);
-                    File.Copy(openDialog.FileName, Path.Combine(carpetaDestino, nombreArchivo), true);
-
-                    AplicarVariante(categoria, key, token, nombre);
-                    refrescarVista?.Invoke();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("No se pudo importar la skin.\n\n" + ex.Message, "Error al importar",
-                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
+                RegistrarError($"EliminarMod({key})", ex);
+                MessageBox.Show(
+                    Textos.F("MsgErrorEliminar", ex.Message),
+                    Textos.T("TituloErrorEliminar"),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning
+                );
             }
         }
 
@@ -680,24 +1156,135 @@ namespace PHDModManager
         // ============================
         // HUD PLAYER
         // ============================
+        // A diferencia del resto de las categorías, esta lista SIEMPRE
+        // devuelve el item de HudPlayerCustomizable.gsc, exista o no en disco
+        // todavía: si no existe en ningún lado (Presente = false), la fila
+        // muestra un botón "Instalar" que copia la versión empaquetada con
+        // PHDModManager en vez de un toggle + botón de borrado.
         private List<ModItem> PrepararItemsHud()
         {
-            var lista = new List<ModItem>();
-
             bool enScripts = File.Exists(Path.Combine(carpetaScripts, ArchivoHudCustomizable));
             bool enBackup = File.Exists(Path.Combine(carpetaBackupScripts, ArchivoHudCustomizable));
 
-            if (enScripts || enBackup)
+            return new List<ModItem>
             {
-                lista.Add(new ModItem
+                new ModItem
                 {
                     Key = ArchivoHudCustomizable,
                     DisplayName = "HUD Player Customizable",
-                    Instalado = enScripts
-                });
+                    Instalado = enScripts,
+                    Presente = enScripts || enBackup
+                }
+            };
+        }
+
+        // ============================
+        // HUD PLAYER — ARCHIVO EMPAQUETADO (recurso embebido)
+        // ============================
+        // Extrae el .gsc empaquetado dentro del propio .exe (como recurso
+        // embebido) y lo escribe en rutaDestino, sobrescribiendo lo que haya.
+        // Se usa tanto para la instalación inicial (cuando el usuario no
+        // tiene el archivo) como para "restaurar el original" (cuando sí lo
+        // tiene, después de confirmar que quiere perder sus cambios).
+        private void ExtraerHudEmpaquetadoA(string rutaDestino)
+        {
+            var asm = System.Reflection.Assembly.GetExecutingAssembly();
+            using (var recurso = asm.GetManifestResourceStream(RecursoHudCustomizable))
+            {
+                if (recurso == null)
+                {
+                    throw new InvalidOperationException(
+                        $"No se encontró el recurso embebido \"{RecursoHudCustomizable}\". " +
+                        "Verificá que HudPlayerCustomizable.gsc esté en la carpeta Recursos del " +
+                        "proyecto con Build Action = Embedded Resource, y que el namespace por " +
+                        "defecto del proyecto coincida.");
+                }
+
+                Directory.CreateDirectory(Path.GetDirectoryName(rutaDestino));
+                using (var archivoDestino = new FileStream(rutaDestino, FileMode.Create, FileAccess.Write))
+                {
+                    recurso.CopyTo(archivoDestino);
+                }
+            }
+        }
+
+        // Instala el .gsc empaquetado cuando el usuario TODAVÍA no lo tiene
+        // en ningún lado (ni activo ni en backup). Se instala directo en la
+        // carpeta de scripts activa, igual que cualquier script agregado a
+        // mano con "Añadir skin / script".
+        private void InstalarHudEmpaquetado(string key)
+        {
+            try
+            {
+                string destino = Path.Combine(carpetaScripts, ArchivoHudCustomizable);
+                ExtraerHudEmpaquetadoA(destino);
+                RecargarTodo();
+            }
+            catch (Exception ex)
+            {
+                RegistrarError("InstalarHudEmpaquetado", ex);
+                MessageBox.Show(
+                    Textos.F("MsgErrorInstalarHud", ex.Message),
+                    Textos.T("TituloErrorInstalarHud"),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning
+                );
+            }
+        }
+
+        // Botón para restaurar la versión original empaquetada aun cuando el
+        // usuario YA tiene un HudPlayerCustomizable.gsc propio (por ejemplo,
+        // con la posición ya ajustada con el editor). Pide confirmación antes
+        // de sobrescribir, porque machacaría esos ajustes sin aviso.
+        private void BtnReinstalarHud_Click(object sender, EventArgs e)
+        {
+            string rutaEnScripts = Path.Combine(carpetaScripts, ArchivoHudCustomizable);
+            string rutaEnBackup = Path.Combine(carpetaBackupScripts, ArchivoHudCustomizable);
+
+            // Si ya existe en algún lado, se sobrescribe ESE archivo (para no
+            // cambiar el estado activo/inactivo que el usuario ya tenía). Si
+            // no existe en ninguno, se instala limpio como activo.
+            string destino =
+                File.Exists(rutaEnScripts) ? rutaEnScripts :
+                File.Exists(rutaEnBackup) ? rutaEnBackup :
+                rutaEnScripts;
+
+            bool yaExistia = File.Exists(destino);
+
+            if (yaExistia)
+            {
+                var confirmacion = MessageBox.Show(
+                    Textos.T("MsgConfirmarSobrescribirHud"),
+                    Textos.T("TituloConfirmarSobrescribirHud"),
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning
+                );
+
+                if (confirmacion != DialogResult.Yes) return;
             }
 
-            return lista;
+            try
+            {
+                ExtraerHudEmpaquetadoA(destino);
+                RecargarTodo();
+
+                MessageBox.Show(
+                    Textos.T("MsgHudReinstalado"),
+                    Textos.T("TituloListo"),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information
+                );
+            }
+            catch (Exception ex)
+            {
+                RegistrarError("BtnReinstalarHud_Click", ex);
+                MessageBox.Show(
+                    Textos.F("MsgErrorInstalarHud", ex.Message),
+                    Textos.T("TituloErrorInstalarHud"),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning
+                );
+            }
         }
 
         private void AplicarEstadoScript(string nombreArchivo, bool activar)
@@ -719,9 +1306,36 @@ namespace PHDModManager
             }
             catch (Exception ex)
             {
+                RegistrarError($"AplicarEstadoScript({nombreArchivo})", ex);
                 MessageBox.Show(
-                    "No se pudo mover el archivo del script. Cerrá el juego si está abierto e intentá de nuevo.\n\n" + ex.Message,
-                    "Error al aplicar el script",
+                    Textos.F("MsgErrorMoverScript", ex.Message),
+                    Textos.T("TituloErrorAplicarScript"),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning
+                );
+            }
+        }
+
+        // Borra el script tanto si está activo como si está en backup.
+        // A diferencia de EliminarMod, acá se identifica por nombre exacto
+        // de archivo, no por token, porque un script normalmente es un
+        // único .gsc.
+        private void EliminarScript(string nombreArchivo)
+        {
+            try
+            {
+                string rutaScripts = Path.Combine(carpetaScripts, nombreArchivo);
+                string rutaBackup = Path.Combine(carpetaBackupScripts, nombreArchivo);
+
+                if (File.Exists(rutaScripts)) File.Delete(rutaScripts);
+                if (File.Exists(rutaBackup)) File.Delete(rutaBackup);
+            }
+            catch (Exception ex)
+            {
+                RegistrarError($"EliminarScript({nombreArchivo})", ex);
+                MessageBox.Show(
+                    Textos.F("MsgErrorEliminar", ex.Message),
+                    Textos.T("TituloErrorEliminar"),
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning
                 );
@@ -731,10 +1345,20 @@ namespace PHDModManager
         // ============================
         // LISTA SIMPLE (Perks, Gloves, Scripts, HUD) — sin variantes
         // ============================
-        private void PoblarLista(Panel contenedor, TextBox buscador, List<ModItem> items, Action<string, bool> aplicarEstado, ToggleSwitch maestro)
+        private void PoblarLista(Panel contenedor, TextBox buscador, List<ModItem> items, Action<string, bool> aplicarEstado, Action<string> eliminarMod, ToggleSwitch maestro, Action<string> instalarMod = null)
         {
             contenedor.Controls.Clear();
-            bool sincronizandoMaestro = false;
+
+            // El flag de sincronización se comparte entre llamadas (por eso vive en
+            // un diccionario aparte y no como variable local): si "Recargar" vuelve a
+            // llamar PoblarLista para el mismo contenedor, las filas nuevas y el
+            // handler del maestro (que solo se engancha una vez) tienen que usar el
+            // mismo flag, si no se pierde la sincronización entre ambos.
+            if (!_flagsSincronizacion.TryGetValue(contenedor, out bool[] sincronizandoMaestro))
+            {
+                sincronizandoMaestro = new bool[1];
+                _flagsSincronizacion[contenedor] = sincronizandoMaestro;
+            }
 
             void ActualizarMaestro()
             {
@@ -750,196 +1374,121 @@ namespace PHDModManager
                     }
                 }
 
-                sincronizandoMaestro = true;
+                sincronizandoMaestro[0] = true;
                 maestro.Checked = algunoActivo;
-                sincronizandoMaestro = false;
+                sincronizandoMaestro[0] = false;
             }
 
             int y = 0;
             foreach (var item in items)
             {
-                var row = new Panel { Size = new Size(contenedor.Width - 20, 28), Location = new Point(0, y), Tag = item };
+                var row = new Panel { Size = new Size(contenedor.Width - 20, 28), Location = new Point(0, y), Tag = item, BackColor = ColorControlInterno };
 
-                var lbl = new Label { Text = item.DisplayName, AutoSize = true, Location = new Point(4, 6) };
-                var toggle = new ToggleSwitch { Size = new Size(40, 20), Location = new Point(row.Width - 50, 4), Checked = item.Instalado };
-
-                toggle.CheckedChanged += (s, e) =>
-                {
-                    aplicarEstado(item.Key, toggle.Checked);
-                    if (!sincronizandoMaestro)
-                    {
-                        ActualizarMaestro();
-                    }
-                };
-
+                var lbl = new Label { Text = item.DisplayName, AutoSize = true, Location = new Point(4, 6), ForeColor = ColorTexto, BackColor = Color.Transparent };
                 row.Controls.Add(lbl);
-                row.Controls.Add(toggle);
+
+                if (item.Presente)
+                {
+                    var toggle = new ToggleSwitch { Size = new Size(40, 20), Location = new Point(row.Width - 50, 4), Checked = item.Instalado };
+
+                    var btnEliminar = new Button
+                    {
+                        Text = "X",
+                        Size = new Size(24, 20),
+                        Location = new Point(row.Width - 80, 4),
+                        FlatStyle = FlatStyle.Flat,
+                        ForeColor = ColorEliminar,
+                        BackColor = ColorControlInterno
+                    };
+                    btnEliminar.FlatAppearance.BorderColor = ColorBorde;
+                    btnEliminar.FlatAppearance.MouseOverBackColor = ColorBotonHover;
+
+                    btnEliminar.Click += (s, e) =>
+                    {
+                        var confirmacion = MessageBox.Show(
+                            Textos.F("MsgConfirmarEliminar", item.DisplayName),
+                            Textos.T("TituloConfirmarEliminar"),
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Warning
+                        );
+
+                        if (confirmacion == DialogResult.Yes)
+                        {
+                            eliminarMod(item.Key);
+                            RecargarTodo();
+                        }
+                    };
+
+                    toggle.CheckedChanged += (s, e) =>
+                    {
+                        aplicarEstado(item.Key, toggle.Checked);
+                        if (!sincronizandoMaestro[0])
+                        {
+                            ActualizarMaestro();
+                        }
+                    };
+
+                    row.Controls.Add(btnEliminar);
+                    row.Controls.Add(toggle);
+                }
+                else
+                {
+                    // Todavía no está instalado en ningún lado (caso actual:
+                    // HUD Player recién empaquetado, antes de que el usuario
+                    // lo instale). No hay nada que togglear ni borrar: se
+                    // ofrece un botón para instalarlo.
+                    var btnInstalar = new Button
+                    {
+                        Text = Textos.T("BtnInstalarHud"),
+                        Size = new Size(90, 20),
+                        Location = new Point(row.Width - 94, 4),
+                        FlatStyle = FlatStyle.Flat,
+                        BackColor = ColorBotonFondo,
+                        ForeColor = ColorTexto
+                    };
+                    btnInstalar.FlatAppearance.BorderColor = ColorBorde;
+                    btnInstalar.FlatAppearance.MouseOverBackColor = ColorBotonHover;
+                    btnInstalar.FlatAppearance.MouseDownBackColor = ColorAcento;
+
+                    btnInstalar.Click += (s, e) =>
+                    {
+                        instalarMod?.Invoke(item.Key);
+                    };
+
+                    row.Controls.Add(btnInstalar);
+                }
+
                 contenedor.Controls.Add(row);
                 y += 32;
             }
 
-            buscador.TextChanged += (s, e) => FiltrarLista(contenedor, buscador.Text);
-
-            maestro.CheckedChanged += (s, e) =>
+            // El buscador y el toggle maestro solo se enganchan la primera vez que
+            // se puebla este contenedor; si no, cada "Recargar" sumaría una
+            // suscripción más y el filtro/sincronización se ejecutaría N veces.
+            if (!_listasEnganchadas.Contains(contenedor))
             {
-                if (sincronizandoMaestro) return;
+                _listasEnganchadas.Add(contenedor);
 
-                sincronizandoMaestro = true;
-                foreach (Control row in contenedor.Controls)
+                buscador.TextChanged += (s, e) => FiltrarLista(contenedor, buscador.Text);
+
+                maestro.CheckedChanged += (s, e) =>
                 {
-                    foreach (Control child in row.Controls)
+                    if (sincronizandoMaestro[0]) return;
+
+                    sincronizandoMaestro[0] = true;
+                    foreach (Control row in contenedor.Controls)
                     {
-                        if (child is ToggleSwitch ts && ts.Checked != maestro.Checked)
+                        foreach (Control child in row.Controls)
                         {
-                            ts.Checked = maestro.Checked;
-                        }
-                    }
-                }
-                sincronizandoMaestro = false;
-            };
-
-            ActualizarMaestro();
-        }
-
-        // ============================
-        // LISTA CON VARIANTES (Weapon Skins por ahora)
-        // ============================
-        private void PoblarListaConVariantes(Panel contenedor, TextBox buscador, List<ModItem> items, string categoria, ToggleSwitch maestro)
-        {
-            contenedor.Controls.Clear();
-            bool sincronizandoMaestro = false;
-
-            void ActualizarMaestro()
-            {
-                bool algunoActivo = false;
-                foreach (Control fila in contenedor.Controls)
-                {
-                    foreach (Control child in fila.Controls)
-                    {
-                        if (child is ToggleSwitch ts && ts.Checked) algunoActivo = true;
-                    }
-                }
-                sincronizandoMaestro = true;
-                maestro.Checked = algunoActivo;
-                sincronizandoMaestro = false;
-            }
-
-            int y = 0;
-            foreach (var item in items)
-            {
-                string token = TokenArchivo.TryGetValue(item.Key, out string t) ? t : null;
-
-                var row = new Panel { Size = new Size(contenedor.Width - 20, 28), Location = new Point(0, y), Tag = item };
-
-                var lbl = new Label { Text = item.DisplayName, AutoSize = true, Location = new Point(4, 6) };
-
-                var btnImportar = new Button { Text = "+", Size = new Size(24, 24), Location = new Point(row.Width - 122, 2), FlatStyle = FlatStyle.Flat };
-
-                var toggle = new ToggleSwitch { Size = new Size(40, 20), Location = new Point(row.Width - 90, 4), Checked = item.Instalado };
-
-                var expandVariantes = new ExpandButton { Size = new Size(24, 24), Location = new Point(row.Width - 30, 2) };
-
-                var panelVariantes = new Panel { Location = new Point(0, 30), Size = new Size(row.Width, 0), AutoScroll = true, Visible = true };
-
-                void RefrescarVariantes()
-                {
-                    panelVariantes.Controls.Clear();
-                    if (token == null) return;
-
-                    int vy = 0;
-                    string activa = ObtenerVarianteActivaActual(categoria, item.Key);
-                    foreach (var nombreVariante in ObtenerVariantes(categoria, item.Key))
-                    {
-                        bool esActiva = nombreVariante == activa;
-                        var filaVar = new Panel { Size = new Size(row.Width - 10, 24), Location = new Point(4, vy) };
-
-                        var lblVar = new Label
-                        {
-                            Text = esActiva ? $"{nombreVariante} (en uso)" : nombreVariante,
-                            AutoSize = true,
-                            Location = new Point(4, 4),
-                            ForeColor = esActiva ? Color.FromArgb(46, 125, 50) : Color.Black
-                        };
-                        filaVar.Controls.Add(lblVar);
-
-                        if (!esActiva)
-                        {
-                            var btnUsar = new Button { Text = "Usar", Size = new Size(50, 20), Location = new Point(filaVar.Width - 80, 2), FlatStyle = FlatStyle.Flat };
-                            btnUsar.Click += (s, e) =>
+                            if (child is ToggleSwitch ts && ts.Checked != maestro.Checked)
                             {
-                                AplicarVariante(categoria, item.Key, token, nombreVariante);
-                                toggle.Checked = true;
-                                RefrescarVariantes();
-                            };
-                            filaVar.Controls.Add(btnUsar);
-
-                            var btnEliminar = new Button { Text = "X", Size = new Size(24, 20), Location = new Point(filaVar.Width - 26, 2), FlatStyle = FlatStyle.Flat };
-                            btnEliminar.Click += (s, e) =>
-                            {
-                                EliminarVariante(categoria, item.Key, nombreVariante);
-                                RefrescarVariantes();
-                            };
-                            filaVar.Controls.Add(btnEliminar);
+                                ts.Checked = maestro.Checked;
+                            }
                         }
-
-                        panelVariantes.Controls.Add(filaVar);
-                        vy += 26;
                     }
-                    panelVariantes.Height = vy;
-                }
-
-                expandVariantes.ExpandedChanged += (s, e) =>
-                {
-                    if (expandVariantes.Expanded) RefrescarVariantes();
-                    panelVariantes.Height = expandVariantes.Expanded ? Math.Max(panelVariantes.Height, 1) : 0;
-                    if (!expandVariantes.Expanded) panelVariantes.Controls.Clear();
+                    sincronizandoMaestro[0] = false;
                 };
-
-                btnImportar.Click += (s, e) =>
-                {
-                    if (token == null) return;
-                    ImportarSkin(categoria, item.Key, token, () =>
-                    {
-                        toggle.Checked = true;
-                        if (expandVariantes.Expanded) RefrescarVariantes();
-                    });
-                };
-
-                toggle.CheckedChanged += (s, e) =>
-                {
-                    AplicarEstadoMod(item.Key, toggle.Checked);
-                    if (!sincronizandoMaestro) ActualizarMaestro();
-                };
-
-                row.Controls.Add(lbl);
-                row.Controls.Add(btnImportar);
-                row.Controls.Add(toggle);
-                row.Controls.Add(expandVariantes);
-                row.Controls.Add(panelVariantes);
-                row.Height = 30;
-
-                contenedor.Controls.Add(row);
-                y += 34;
             }
-
-            buscador.TextChanged += (s, e) => FiltrarLista(contenedor, buscador.Text);
-
-            maestro.CheckedChanged += (s, e) =>
-            {
-                if (sincronizandoMaestro) return;
-                sincronizandoMaestro = true;
-                foreach (Control row in contenedor.Controls)
-                {
-                    foreach (Control child in row.Controls)
-                    {
-                        if (child is ToggleSwitch ts && ts.Checked != maestro.Checked)
-                        {
-                            ts.Checked = maestro.Checked;
-                        }
-                    }
-                }
-                sincronizandoMaestro = false;
-            };
 
             ActualizarMaestro();
         }
@@ -960,39 +1509,5 @@ namespace PHDModManager
             }
         }
 
-        private void Form1_Load(object sender, EventArgs e)
-        {
-
-        }
-
-        private void label1_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void label1_Click_1(object sender, EventArgs e)
-        {
-
-        }
-
-        private void label4_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void panel4_Paint(object sender, PaintEventArgs e)
-        {
-
-        }
-
-        private void ExpandButtonWeapons_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void IconSearchWeapons_Click(object sender, EventArgs e)
-        {
-
-        }
     }
 }
