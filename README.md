@@ -12,7 +12,7 @@
 
 ---
 
-## 🇪🇸 Español
+##  Español
 
 **PHDModManager** es un launcher/gestor de mods para **Plutonium (BO2)** que permite activar y desactivar mods de forma sencilla, sin tener que copiar o editar archivos manualmente.
 
@@ -57,7 +57,7 @@ Creative Commons (no comercial).
 
 ---
 
-## 🇬🇧 English
+##  English
 
 **PHDModManager** is a launcher/mod manager for **Plutonium (BO2)** that lets you enable and disable mods easily, without manually copying or editing files.
 
