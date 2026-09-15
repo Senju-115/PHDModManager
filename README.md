@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Senju-115/PHDModManager/releases/latest">
+  <a href="https://github.com/Senju-115/PHDModManager/releases/download/v1.1/PHDModManagerv1.1.zip">
     <img src="https://img.shields.io/github/v/release/Senju-115/PHDModManager" alt="Latest release"/>
   </a>
 </p>
