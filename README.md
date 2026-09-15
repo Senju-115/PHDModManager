@@ -38,7 +38,7 @@
 
 ### 📥 Instalación y uso
 
-1. Haz clic aquí para **[descargar la última versión](https://github.com/Senju-115/PHDModManager/releases/latest/download/PHDModManager.zip)** (`.zip`)
+1. Haz clic aquí para **[descargar la última versión](https://github.com/Senju-115/PHDModManager/releases/download/v1.1/PHDModManagerv1.1.zip)** (`.zip`)
 2. Extráelo en la carpeta que prefieras
 3. Ejecuta `PHDModManager.exe`
 4. Activa los mods que quieras desde la interfaz y presiona **"Launch Plutonium"**
@@ -82,7 +82,7 @@ Todos los derechos reservados por el autor.
 
 ### 📥 Installation and usage
 
-1. Click here to **[download the latest version](https://github.com/Senju-115/PHDModManager/releases/latest/download/PHDModManager.zip)** (`.zip`)
+1. Click here to **[download the latest version](https://github.com/Senju-115/PHDModManager/releases/download/v1.1/PHDModManagerv1.1.zip** (`.zip`)
 2. Extract it to a folder of your choice
 3. Run `PHDModManager.exe`
 4. Enable the mods you want from the interface and press **"Launch Plutonium"**
