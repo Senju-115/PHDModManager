@@ -12,50 +12,6 @@
 
 ---
 
-## 🇪🇸 Español
-
-**PHDModManager** es un launcher/gestor de mods para **Plutonium (BO2)** que permite activar y desactivar mods de forma sencilla, sin tener que copiar o editar archivos manualmente.
-
-### 📸 Capturas de pantalla
-
-<p align="center">
-  <img src="./screenshots/gameplay-1.gif" alt="Uso en Green Run" width="400"/>
-  <br/>
-  <img src="./screenshots/gameplay-2.gif" alt="Interfaz en juego" width="400"/>
-  &nbsp;&nbsp;
-  <img src="./screenshots/gameplay-3.gif" alt="Categorías activas en juego" width="400"/>
-</p>
-
-### ✨ Funciones principales
-
-- Activa o desactiva mods por categoría completa o individualmente
-- Categorías disponibles: **Weapon Skins**, **Perk Skins**, **Gloves**, **Scripts**, **HUD Player**
-- Buscador dentro de cada categoría para encontrar mods rápidamente
-- Editor visual de posición del HUD (icono y texto en pantalla)
-- Instalación automática de los mods activados hacia la carpeta de Plutonium
-- Tema oscuro integrado
-- Interfaz bilingüe (español / inglés), con botón para cambiar de idioma
-
-### 📥 Instalación y uso
-
-1. Haz clic aquí para **[descargar la última versión](https://github.com/Senju-115/PHDModManager/releases/download/v1.1/PHDModManagerv1.1.zip)** (`.zip`)
-2. Extráelo en la carpeta que prefieras
-3. Ejecuta `PHDModManager.exe`
-4. Activa los mods que quieras desde la interfaz y presiona **"Launch Plutonium"**
-
-### 🛠️ Para desarrolladores
-
-- Clona el repositorio: `git clone https://github.com/Senju-115/PHDModManager.git`
-- Abre `PHDModManager.sln` con **Visual Studio**
-- Tecnologías usadas: **C# WinForms** sobre **.NET Framework 4.8**
-- Los controles de interfaz (ToggleSwitch, ExpandButton) son personalizados, dibujados con GDI+, sin dependencias de terceros
-
-### 📄 Licencia
-
-Todos los derechos reservados por el autor.
-
----
-
 ## 🇬🇧 English
 
 **PHDModManager** is a launcher/mod manager for **Plutonium (BO2)** that lets you enable and disable mods easily, without manually copying or editing files.
@@ -96,4 +52,51 @@ Todos los derechos reservados por el autor.
 
 ### 📄 License
 
-All rights reserved by the author.
+Creative Commons (no comercial).
+
+---
+
+## 🇪🇸 Español
+
+**PHDModManager** es un launcher/gestor de mods para **Plutonium (BO2)** que permite activar y desactivar mods de forma sencilla, sin tener que copiar o editar archivos manualmente.
+
+### 📸 Capturas de pantalla
+
+<p align="center">
+  <img src="./screenshots/gameplay-1.gif" alt="Uso en Green Run" width="400"/>
+  <br/>
+  <img src="./screenshots/gameplay-2.gif" alt="Interfaz en juego" width="400"/>
+  &nbsp;&nbsp;
+  <img src="./screenshots/gameplay-3.gif" alt="Categorías activas en juego" width="400"/>
+</p>
+
+### ✨ Funciones principales
+
+- Activa o desactiva mods por categoría completa o individualmente
+- Categorías disponibles: **Weapon Skins**, **Perk Skins**, **Gloves**, **Scripts**, **HUD Player**
+- Buscador dentro de cada categoría para encontrar mods rápidamente
+- Editor visual de posición del HUD (icono y texto en pantalla)
+- Instalación automática de los mods activados hacia la carpeta de Plutonium
+- Tema oscuro integrado
+- Interfaz bilingüe (español / inglés), con botón para cambiar de idioma
+
+### 📥 Instalación y uso
+
+1. Haz clic aquí para **[descargar la última versión](https://github.com/Senju-115/PHDModManager/releases/download/v1.1/PHDModManagerv1.1.zip)** (`.zip`)
+2. Extráelo en la carpeta que prefieras
+3. Ejecuta `PHDModManager.exe`
+4. Activa los mods que quieras desde la interfaz y presiona **"Launch Plutonium"**
+
+### 🛠️ Para desarrolladores
+
+- Clona el repositorio: `git clone https://github.com/Senju-115/PHDModManager.git`
+- Abre `PHDModManager.sln` con **Visual Studio**
+- Tecnologías usadas: **C# WinForms** sobre **.NET Framework 4.8**
+- Los controles de interfaz (ToggleSwitch, ExpandButton) son personalizados, dibujados con GDI+, sin dependencias de terceros
+
+### 📄 Licencia
+
+Creative Commons (no comercial).
+
+---
+
