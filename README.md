@@ -12,7 +12,7 @@
 
 ---
 
-##  Español
+## 🇪🇸 Español
 
 **PHDModManager** es un launcher/gestor de mods para **Plutonium (BO2)** que permite activar y desactivar mods de forma sencilla, sin tener que copiar o editar archivos manualmente.
 
@@ -38,11 +38,10 @@
 
 ### 📥 Instalación y uso
 
-1. Ve a la sección [**Releases**](https://github.com/Senju-115/PHDModManager/releases/latest) de este repositorio
-2. Descarga el archivo `.zip` de la última versión
-3. Extráelo en la carpeta que prefieras
-4. Ejecuta `PHDModManager.exe`
-5. Activa los mods que quieras desde la interfaz y presiona **"Launch Plutonium"**
+1. Haz clic aquí para **[descargar la última versión](https://github.com/Senju-115/PHDModManager/releases/latest/download/PHDModManager.zip)** (`.zip`)
+2. Extráelo en la carpeta que prefieras
+3. Ejecuta `PHDModManager.exe`
+4. Activa los mods que quieras desde la interfaz y presiona **"Launch Plutonium"**
 
 ### 🛠️ Para desarrolladores
 
@@ -53,11 +52,11 @@
 
 ### 📄 Licencia
 
-Creative Commons (no comercial).
+Todos los derechos reservados por el autor.
 
 ---
 
-##  English
+## 🇬🇧 English
 
 **PHDModManager** is a launcher/mod manager for **Plutonium (BO2)** that lets you enable and disable mods easily, without manually copying or editing files.
 
@@ -83,11 +82,10 @@ Creative Commons (no comercial).
 
 ### 📥 Installation and usage
 
-1. Go to the [**Releases**](https://github.com/Senju-115/PHDModManager/releases/latest) section of this repository
-2. Download the `.zip` file from the latest version
-3. Extract it to a folder of your choice
-4. Run `PHDModManager.exe`
-5. Enable the mods you want from the interface and press **"Launch Plutonium"**
+1. Click here to **[download the latest version](https://github.com/Senju-115/PHDModManager/releases/latest/download/PHDModManager.zip)** (`.zip`)
+2. Extract it to a folder of your choice
+3. Run `PHDModManager.exe`
+4. Enable the mods you want from the interface and press **"Launch Plutonium"**
 
 ### 🛠️ For developers
 
@@ -98,4 +96,4 @@ Creative Commons (no comercial).
 
 ### 📄 License
 
-Creative Commons (no comercial).
+All rights reserved by the author.
