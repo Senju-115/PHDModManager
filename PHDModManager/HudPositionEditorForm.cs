@@ -43,6 +43,21 @@ namespace PHDModManager
     //   investigación aparte y no se tocó nada relacionado a propósito.
     public class HudPositionEditorForm : Form
     {
+        // ============================
+        // PALETA DE COLORES (tema oscuro, a juego con MainForm)
+        // ============================
+        // Calculada a partir de las capturas de la ventana principal:
+        // fondo casi negro, paneles/controles en un gris apenas más claro,
+        // texto en gris muy claro (no blanco puro, para que sea menos duro),
+        // y un borde sutil para separar los botones del fondo. Si en algún
+        // momento MainForm define estos mismos valores en otro lugar del
+        // código (ej. un tema global), convendría mover esta paleta a una
+        // clase compartida en vez de repetirla acá.
+        private static readonly Color ColorFondo = Color.FromArgb(30, 30, 30);
+        private static readonly Color ColorPanelControl = Color.FromArgb(45, 45, 48);
+        private static readonly Color ColorBordeControl = Color.FromArgb(63, 63, 70);
+        private static readonly Color ColorTexto = Color.FromArgb(225, 225, 225);
+
         // --- Geometría del "lienzo" ---
         // AltoVirtual (480) es la referencia vertical fija del motor: la
         // escala de AMBOS ejes sale siempre de acá. El "ancho real" de la
@@ -87,7 +102,7 @@ namespace PHDModManager
 
         // Colores para distinguir los dos marcadores en el lienzo.
         private static readonly Color ColorIcono = Color.DeepSkyBlue;
-        private static readonly Color ColorTexto = Color.Orange;
+        private static readonly Color ColorTextoMarcador = Color.Orange;
 
         // Nombre del archivo de imagen de referencia (captura de pantalla del
         // juego). Se busca al lado del .exe. Si no está, el lienzo se dibuja
@@ -154,6 +169,7 @@ namespace PHDModManager
             AsegurarQueEntraEnPantalla();
             CargarImagenFondo();
             CargarPosicionDesdeArchivo();
+            AplicarModoOscuroBarraTitulo();
         }
 
         protected override void Dispose(bool disposing)
@@ -226,6 +242,8 @@ namespace PHDModManager
             // completa es más seguro para una ventana de este tamaño.
             this.StartPosition = FormStartPosition.CenterScreen;
             this.Font = new Font("Segoe UI", 9F);
+            this.BackColor = ColorFondo;
+            this.ForeColor = ColorTexto;
 
             _lblAviso = new Label
             {
@@ -252,7 +270,7 @@ namespace PHDModManager
             _radioTexto = new RadioButton
             {
                 Text = Textos.T("EtiquetaMarcadorTexto"),
-                ForeColor = ColorTexto,
+                ForeColor = ColorTextoMarcador,
                 AutoSize = true,
                 Location = new Point(_radioIcono.Right + 30, _radioIcono.Top)
             };
@@ -291,6 +309,7 @@ namespace PHDModManager
             _lblPosicionActual = new Label
             {
                 AutoSize = true,
+                ForeColor = ColorTexto,
                 Location = new Point(20, _panelLienzo.Bottom + 8),
                 Font = new Font("Consolas", 9.5F, FontStyle.Bold)
             };
@@ -353,6 +372,7 @@ namespace PHDModManager
             {
                 Text = Textos.T("LblResolucionJuego"),
                 AutoSize = true,
+                ForeColor = ColorTexto,
                 Location = new Point(20, _btnRestablecer.Bottom + 14)
             };
 
@@ -363,13 +383,17 @@ namespace PHDModManager
                 Value = 1920,
                 Increment = 10,
                 Location = new Point(20, _lblResolucion.Bottom + 4),
-                Size = new Size(90, 24)
+                Size = new Size(90, 24),
+                BackColor = ColorPanelControl,
+                ForeColor = ColorTexto,
+                BorderStyle = BorderStyle.FixedSingle
             };
 
             var lblPorX = new Label
             {
                 Text = "x",
                 AutoSize = true,
+                ForeColor = ColorTexto,
                 Location = new Point(_numAnchoJuego.Right + 6, _numAnchoJuego.Top + 3)
             };
 
@@ -380,7 +404,10 @@ namespace PHDModManager
                 Value = 1080,
                 Increment = 10,
                 Location = new Point(lblPorX.Right + 6, _numAnchoJuego.Top),
-                Size = new Size(90, 24)
+                Size = new Size(90, 24),
+                BackColor = ColorPanelControl,
+                ForeColor = ColorTexto,
+                BorderStyle = BorderStyle.FixedSingle
             };
 
             _numAnchoJuego.ValueChanged += (s, e) => ActualizarAnchoVirtualDerecho();
@@ -390,13 +417,17 @@ namespace PHDModManager
             {
                 Text = Textos.T("LblTextoNombre"),
                 AutoSize = true,
+                ForeColor = ColorTexto,
                 Location = new Point(20, _numAnchoJuego.Bottom + 14)
             };
 
             _txtNombre = new TextBox
             {
                 Location = new Point(20, _lblTextoNombre.Bottom + 4),
-                Size = new Size(AnchoPanelPx, 24)
+                Size = new Size(AnchoPanelPx, 24),
+                BackColor = ColorPanelControl,
+                ForeColor = ColorTexto,
+                BorderStyle = BorderStyle.FixedSingle
             };
 
             _btnGuardar = new Button
@@ -416,6 +447,22 @@ namespace PHDModManager
                 FlatStyle = FlatStyle.Flat,
                 DialogResult = DialogResult.Cancel
             };
+
+            // Estilo oscuro aplicado en un solo lugar a todos los botones
+            // "planos" del formulario (fondo gris control, texto claro,
+            // borde sutil), para no repetir las mismas 3 líneas en cada uno.
+            foreach (var boton in new[]
+            {
+                _btnEsquinaArribaIzquierda, _btnEsquinaArribaDerecha,
+                _btnEsquinaAbajoIzquierda, _btnEsquinaAbajoDerecha,
+                _btnRestablecer, _btnGuardar, _btnCancelar
+            })
+            {
+                boton.BackColor = ColorPanelControl;
+                boton.ForeColor = ColorTexto;
+                boton.FlatAppearance.BorderColor = ColorBordeControl;
+                boton.FlatAppearance.BorderSize = 1;
+            }
 
             this.Controls.Add(_lblAviso);
             this.Controls.Add(_radioIcono);
@@ -783,13 +830,13 @@ namespace PHDModManager
             // encima del otro si llegan a superponerse.
             if (_marcadorActivoEsIcono)
             {
-                DibujarMarcador(g, _xTexto, _yTexto, ColorTexto, activo: false);
+                DibujarMarcador(g, _xTexto, _yTexto, ColorTextoMarcador, activo: false);
                 DibujarMarcador(g, _xIcono, _yIcono, ColorIcono, activo: true);
             }
             else
             {
                 DibujarMarcador(g, _xIcono, _yIcono, ColorIcono, activo: false);
-                DibujarMarcador(g, _xTexto, _yTexto, ColorTexto, activo: true);
+                DibujarMarcador(g, _xTexto, _yTexto, ColorTextoMarcador, activo: true);
             }
         }
 
@@ -869,20 +916,45 @@ namespace PHDModManager
 
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(HudPositionEditorForm));
             this.SuspendLayout();
             // 
             // HudPositionEditorForm
             // 
             this.ClientSize = new System.Drawing.Size(282, 253);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "HudPositionEditorForm";
-            this.Load += new System.EventHandler(this.HudPositionEditorForm_Load);
             this.ResumeLayout(false);
 
         }
 
-        private void HudPositionEditorForm_Load(object sender, EventArgs e)
-        {
+        // ============================
+        // BARRA DE TÍTULO OSCURA (DWM)
+        // ============================
+        // Mismo mecanismo que en MainForm: DWMWA_USE_IMMERSIVE_DARK_MODE le
+        // pide a Windows que dibuje la barra de título nativa en modo
+        // oscuro. Sin esto, la ventana se abre con la barra de título
+        // blanca por defecto aunque el resto de los controles ya estén
+        // pintados con ColorFondo. Requiere Windows 10 1809+ / Windows 11;
+        // en versiones más viejas simplemente no tiene efecto.
+        private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
 
+        [System.Runtime.InteropServices.DllImport("dwmapi.dll")]
+        private static extern int DwmSetWindowAttribute(IntPtr hwnd, int dwAttribute, ref int pvAttribute, int cbAttribute);
+
+        private void AplicarModoOscuroBarraTitulo()
+        {
+            try
+            {
+                int usarOscuro = 1;
+                DwmSetWindowAttribute(Handle, DWMWA_USE_IMMERSIVE_DARK_MODE, ref usarOscuro, sizeof(int));
+            }
+            catch
+            {
+                // dwmapi.dll no disponible o atributo desconocido (Windows
+                // viejo): se queda con la barra de título clásica, sin
+                // romper nada.
+            }
         }
     }
 }

@@ -15,6 +15,7 @@
 
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.PanelToolbar = new System.Windows.Forms.Panel();
             this.BtnRecargar = new System.Windows.Forms.Button();
             this.BtnCambiarCarpeta = new System.Windows.Forms.Button();
@@ -24,24 +25,14 @@
             this.LblVersion = new System.Windows.Forms.Label();
             this.PanelWeapon = new System.Windows.Forms.Panel();
             this.WeaponLabel = new System.Windows.Forms.Label();
-            this.ToggleSwitchWeapons = new ToggleSwitch();
-            this.ExpandButtonWeapons = new ExpandButton();
             this.PanelPerks = new System.Windows.Forms.Panel();
             this.PerksLabel = new System.Windows.Forms.Label();
-            this.ToggleSwitchPerks = new ToggleSwitch();
-            this.ExpandButtonPerks = new ExpandButton();
             this.PanelScripts = new System.Windows.Forms.Panel();
             this.ScriptsLabel = new System.Windows.Forms.Label();
-            this.ToggleSwitchScripts = new ToggleSwitch();
-            this.ExpandButtonScripts = new ExpandButton();
             this.PanelHud = new System.Windows.Forms.Panel();
             this.HudLabel = new System.Windows.Forms.Label();
-            this.ToggleSwitchHud = new ToggleSwitch();
-            this.ExpandButtonHud = new ExpandButton();
             this.PanelGloves = new System.Windows.Forms.Panel();
             this.Gloves = new System.Windows.Forms.Label();
-            this.ToggleSwitchGloves = new ToggleSwitch();
-            this.ExpandButtonGloves = new ExpandButton();
             this.DetailWeapons = new System.Windows.Forms.Panel();
             this.ItemsWeapons = new System.Windows.Forms.Panel();
             this.IconSearchWeapons = new System.Windows.Forms.Label();
@@ -59,12 +50,22 @@
             this.IconSearchScripts = new System.Windows.Forms.Label();
             this.SearchScripts = new System.Windows.Forms.TextBox();
             this.DetailHud = new System.Windows.Forms.Panel();
-            this.ItemsHud = new System.Windows.Forms.Panel();
-            this.IconSearchHud = new System.Windows.Forms.Label();
-            this.SearchHud = new System.Windows.Forms.TextBox();
             this.BtnEditarPosicionHud = new System.Windows.Forms.Button();
             this.BtnCambiarIconoHud = new System.Windows.Forms.Button();
             this.BtnReinstalarHud = new System.Windows.Forms.Button();
+            this.ItemsHud = new System.Windows.Forms.Panel();
+            this.IconSearchHud = new System.Windows.Forms.Label();
+            this.SearchHud = new System.Windows.Forms.TextBox();
+            this.ToggleSwitchWeapons = new ToggleSwitch();
+            this.ExpandButtonWeapons = new ExpandButton();
+            this.ToggleSwitchPerks = new ToggleSwitch();
+            this.ExpandButtonPerks = new ExpandButton();
+            this.ToggleSwitchGloves = new ToggleSwitch();
+            this.ExpandButtonGloves = new ExpandButton();
+            this.ToggleSwitchScripts = new ToggleSwitch();
+            this.ExpandButtonScripts = new ExpandButton();
+            this.ToggleSwitchHud = new ToggleSwitch();
+            this.ExpandButtonHud = new ExpandButton();
             this.PanelToolbar.SuspendLayout();
             this.PanelWeapon.SuspendLayout();
             this.PanelPerks.SuspendLayout();
@@ -88,6 +89,7 @@
             this.PanelToolbar.Controls.Add(this.LblVersion);
             this.PanelToolbar.Location = new System.Drawing.Point(10, 10);
             this.PanelToolbar.Name = "PanelToolbar";
+            this.PanelToolbar.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.PanelToolbar.Size = new System.Drawing.Size(360, 100);
             this.PanelToolbar.TabIndex = 10;
             // 
@@ -156,7 +158,8 @@
             this.LblVersion.Name = "LblVersion";
             this.LblVersion.Size = new System.Drawing.Size(31, 16);
             this.LblVersion.TabIndex = 3;
-            this.LblVersion.Text = "v1.0";
+            this.LblVersion.Text = "v1.1";
+            this.LblVersion.Click += new System.EventHandler(this.LblVersion_Click);
             // 
             // PanelWeapon
             // 
@@ -177,25 +180,6 @@
             this.WeaponLabel.TabIndex = 0;
             this.WeaponLabel.Text = "Weapon Skins";
             // 
-            // ToggleSwitchWeapons
-            // 
-            this.ToggleSwitchWeapons.Checked = false;
-            this.ToggleSwitchWeapons.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.ToggleSwitchWeapons.Location = new System.Drawing.Point(260, 9);
-            this.ToggleSwitchWeapons.Name = "ToggleSwitchWeapons";
-            this.ToggleSwitchWeapons.Size = new System.Drawing.Size(46, 22);
-            this.ToggleSwitchWeapons.TabIndex = 1;
-            // 
-            // ExpandButtonWeapons
-            // 
-            this.ExpandButtonWeapons.BackColor = System.Drawing.Color.Transparent;
-            this.ExpandButtonWeapons.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.ExpandButtonWeapons.Expanded = false;
-            this.ExpandButtonWeapons.Location = new System.Drawing.Point(320, 8);
-            this.ExpandButtonWeapons.Name = "ExpandButtonWeapons";
-            this.ExpandButtonWeapons.Size = new System.Drawing.Size(24, 24);
-            this.ExpandButtonWeapons.TabIndex = 2;
-            // 
             // PanelPerks
             // 
             this.PanelPerks.Controls.Add(this.PerksLabel);
@@ -214,25 +198,6 @@
             this.PerksLabel.Size = new System.Drawing.Size(71, 16);
             this.PerksLabel.TabIndex = 0;
             this.PerksLabel.Text = "Perk Skins";
-            // 
-            // ToggleSwitchPerks
-            // 
-            this.ToggleSwitchPerks.Checked = false;
-            this.ToggleSwitchPerks.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.ToggleSwitchPerks.Location = new System.Drawing.Point(260, 9);
-            this.ToggleSwitchPerks.Name = "ToggleSwitchPerks";
-            this.ToggleSwitchPerks.Size = new System.Drawing.Size(46, 22);
-            this.ToggleSwitchPerks.TabIndex = 1;
-            // 
-            // ExpandButtonPerks
-            // 
-            this.ExpandButtonPerks.BackColor = System.Drawing.Color.Transparent;
-            this.ExpandButtonPerks.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.ExpandButtonPerks.Expanded = false;
-            this.ExpandButtonPerks.Location = new System.Drawing.Point(320, 8);
-            this.ExpandButtonPerks.Name = "ExpandButtonPerks";
-            this.ExpandButtonPerks.Size = new System.Drawing.Size(24, 24);
-            this.ExpandButtonPerks.TabIndex = 2;
             // 
             // PanelScripts
             // 
@@ -253,25 +218,6 @@
             this.ScriptsLabel.TabIndex = 0;
             this.ScriptsLabel.Text = "Scripts";
             // 
-            // ToggleSwitchScripts
-            // 
-            this.ToggleSwitchScripts.Checked = false;
-            this.ToggleSwitchScripts.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.ToggleSwitchScripts.Location = new System.Drawing.Point(260, 9);
-            this.ToggleSwitchScripts.Name = "ToggleSwitchScripts";
-            this.ToggleSwitchScripts.Size = new System.Drawing.Size(46, 22);
-            this.ToggleSwitchScripts.TabIndex = 1;
-            // 
-            // ExpandButtonScripts
-            // 
-            this.ExpandButtonScripts.BackColor = System.Drawing.Color.Transparent;
-            this.ExpandButtonScripts.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.ExpandButtonScripts.Expanded = false;
-            this.ExpandButtonScripts.Location = new System.Drawing.Point(320, 8);
-            this.ExpandButtonScripts.Name = "ExpandButtonScripts";
-            this.ExpandButtonScripts.Size = new System.Drawing.Size(24, 24);
-            this.ExpandButtonScripts.TabIndex = 2;
-            // 
             // PanelHud
             // 
             this.PanelHud.Controls.Add(this.HudLabel);
@@ -291,25 +237,6 @@
             this.HudLabel.TabIndex = 0;
             this.HudLabel.Text = "HUD Player";
             // 
-            // ToggleSwitchHud
-            // 
-            this.ToggleSwitchHud.Checked = false;
-            this.ToggleSwitchHud.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.ToggleSwitchHud.Location = new System.Drawing.Point(260, 9);
-            this.ToggleSwitchHud.Name = "ToggleSwitchHud";
-            this.ToggleSwitchHud.Size = new System.Drawing.Size(46, 22);
-            this.ToggleSwitchHud.TabIndex = 1;
-            // 
-            // ExpandButtonHud
-            // 
-            this.ExpandButtonHud.BackColor = System.Drawing.Color.Transparent;
-            this.ExpandButtonHud.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.ExpandButtonHud.Expanded = false;
-            this.ExpandButtonHud.Location = new System.Drawing.Point(320, 8);
-            this.ExpandButtonHud.Name = "ExpandButtonHud";
-            this.ExpandButtonHud.Size = new System.Drawing.Size(24, 24);
-            this.ExpandButtonHud.TabIndex = 2;
-            // 
             // PanelGloves
             // 
             this.PanelGloves.Controls.Add(this.Gloves);
@@ -328,25 +255,6 @@
             this.Gloves.Size = new System.Drawing.Size(50, 16);
             this.Gloves.TabIndex = 0;
             this.Gloves.Text = "Gloves";
-            // 
-            // ToggleSwitchGloves
-            // 
-            this.ToggleSwitchGloves.Checked = false;
-            this.ToggleSwitchGloves.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.ToggleSwitchGloves.Location = new System.Drawing.Point(260, 9);
-            this.ToggleSwitchGloves.Name = "ToggleSwitchGloves";
-            this.ToggleSwitchGloves.Size = new System.Drawing.Size(46, 22);
-            this.ToggleSwitchGloves.TabIndex = 1;
-            // 
-            // ExpandButtonGloves
-            // 
-            this.ExpandButtonGloves.BackColor = System.Drawing.Color.Transparent;
-            this.ExpandButtonGloves.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.ExpandButtonGloves.Expanded = false;
-            this.ExpandButtonGloves.Location = new System.Drawing.Point(320, 8);
-            this.ExpandButtonGloves.Name = "ExpandButtonGloves";
-            this.ExpandButtonGloves.Size = new System.Drawing.Size(24, 24);
-            this.ExpandButtonGloves.TabIndex = 2;
             // 
             // DetailWeapons
             // 
@@ -497,33 +405,6 @@
             this.DetailHud.Size = new System.Drawing.Size(360, 0);
             this.DetailHud.TabIndex = 9;
             // 
-            // ItemsHud
-            // 
-            // Se corrió de Y=94 a Y=124 para dejarle lugar arriba a
-            // BtnReinstalarHud (que ahora va debajo de BtnCambiarIconoHud;
-            // el buscador+lista quedan más abajo).
-            this.ItemsHud.AutoScroll = true;
-            this.ItemsHud.Location = new System.Drawing.Point(15, 124);
-            this.ItemsHud.Name = "ItemsHud";
-            this.ItemsHud.Size = new System.Drawing.Size(322, 111);
-            this.ItemsHud.TabIndex = 2;
-            // 
-            // IconSearchHud
-            // 
-            this.IconSearchHud.AutoSize = true;
-            this.IconSearchHud.Location = new System.Drawing.Point(12, 6);
-            this.IconSearchHud.Name = "IconSearchHud";
-            this.IconSearchHud.Size = new System.Drawing.Size(19, 16);
-            this.IconSearchHud.TabIndex = 1;
-            this.IconSearchHud.Text = "🔍";
-            // 
-            // SearchHud
-            // 
-            this.SearchHud.Location = new System.Drawing.Point(37, 3);
-            this.SearchHud.Name = "SearchHud";
-            this.SearchHud.Size = new System.Drawing.Size(300, 22);
-            this.SearchHud.TabIndex = 0;
-            // 
             // BtnEditarPosicionHud
             // 
             this.BtnEditarPosicionHud.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
@@ -557,6 +438,125 @@
             this.BtnReinstalarHud.UseVisualStyleBackColor = true;
             this.BtnReinstalarHud.Click += new System.EventHandler(this.BtnReinstalarHud_Click);
             // 
+            // ItemsHud
+            // 
+            this.ItemsHud.AutoScroll = true;
+            this.ItemsHud.Location = new System.Drawing.Point(15, 124);
+            this.ItemsHud.Name = "ItemsHud";
+            this.ItemsHud.Size = new System.Drawing.Size(322, 111);
+            this.ItemsHud.TabIndex = 2;
+            // 
+            // IconSearchHud
+            // 
+            this.IconSearchHud.AutoSize = true;
+            this.IconSearchHud.Location = new System.Drawing.Point(12, 6);
+            this.IconSearchHud.Name = "IconSearchHud";
+            this.IconSearchHud.Size = new System.Drawing.Size(19, 16);
+            this.IconSearchHud.TabIndex = 1;
+            this.IconSearchHud.Text = "🔍";
+            // 
+            // SearchHud
+            // 
+            this.SearchHud.Location = new System.Drawing.Point(37, 3);
+            this.SearchHud.Name = "SearchHud";
+            this.SearchHud.Size = new System.Drawing.Size(300, 22);
+            this.SearchHud.TabIndex = 0;
+            // 
+            // ToggleSwitchWeapons
+            // 
+            this.ToggleSwitchWeapons.Checked = false;
+            this.ToggleSwitchWeapons.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.ToggleSwitchWeapons.Location = new System.Drawing.Point(260, 9);
+            this.ToggleSwitchWeapons.Name = "ToggleSwitchWeapons";
+            this.ToggleSwitchWeapons.Size = new System.Drawing.Size(46, 22);
+            this.ToggleSwitchWeapons.TabIndex = 1;
+            // 
+            // ExpandButtonWeapons
+            // 
+            this.ExpandButtonWeapons.BackColor = System.Drawing.Color.Transparent;
+            this.ExpandButtonWeapons.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.ExpandButtonWeapons.Expanded = false;
+            this.ExpandButtonWeapons.Location = new System.Drawing.Point(320, 8);
+            this.ExpandButtonWeapons.Name = "ExpandButtonWeapons";
+            this.ExpandButtonWeapons.Size = new System.Drawing.Size(24, 24);
+            this.ExpandButtonWeapons.TabIndex = 2;
+            // 
+            // ToggleSwitchPerks
+            // 
+            this.ToggleSwitchPerks.Checked = false;
+            this.ToggleSwitchPerks.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.ToggleSwitchPerks.Location = new System.Drawing.Point(260, 9);
+            this.ToggleSwitchPerks.Name = "ToggleSwitchPerks";
+            this.ToggleSwitchPerks.Size = new System.Drawing.Size(46, 22);
+            this.ToggleSwitchPerks.TabIndex = 1;
+            // 
+            // ExpandButtonPerks
+            // 
+            this.ExpandButtonPerks.BackColor = System.Drawing.Color.Transparent;
+            this.ExpandButtonPerks.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.ExpandButtonPerks.Expanded = false;
+            this.ExpandButtonPerks.Location = new System.Drawing.Point(320, 8);
+            this.ExpandButtonPerks.Name = "ExpandButtonPerks";
+            this.ExpandButtonPerks.Size = new System.Drawing.Size(24, 24);
+            this.ExpandButtonPerks.TabIndex = 2;
+            // 
+            // ToggleSwitchGloves
+            // 
+            this.ToggleSwitchGloves.Checked = false;
+            this.ToggleSwitchGloves.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.ToggleSwitchGloves.Location = new System.Drawing.Point(260, 9);
+            this.ToggleSwitchGloves.Name = "ToggleSwitchGloves";
+            this.ToggleSwitchGloves.Size = new System.Drawing.Size(46, 22);
+            this.ToggleSwitchGloves.TabIndex = 1;
+            // 
+            // ExpandButtonGloves
+            // 
+            this.ExpandButtonGloves.BackColor = System.Drawing.Color.Transparent;
+            this.ExpandButtonGloves.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.ExpandButtonGloves.Expanded = false;
+            this.ExpandButtonGloves.Location = new System.Drawing.Point(320, 8);
+            this.ExpandButtonGloves.Name = "ExpandButtonGloves";
+            this.ExpandButtonGloves.Size = new System.Drawing.Size(24, 24);
+            this.ExpandButtonGloves.TabIndex = 2;
+            // 
+            // ToggleSwitchScripts
+            // 
+            this.ToggleSwitchScripts.Checked = false;
+            this.ToggleSwitchScripts.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.ToggleSwitchScripts.Location = new System.Drawing.Point(260, 9);
+            this.ToggleSwitchScripts.Name = "ToggleSwitchScripts";
+            this.ToggleSwitchScripts.Size = new System.Drawing.Size(46, 22);
+            this.ToggleSwitchScripts.TabIndex = 1;
+            // 
+            // ExpandButtonScripts
+            // 
+            this.ExpandButtonScripts.BackColor = System.Drawing.Color.Transparent;
+            this.ExpandButtonScripts.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.ExpandButtonScripts.Expanded = false;
+            this.ExpandButtonScripts.Location = new System.Drawing.Point(320, 8);
+            this.ExpandButtonScripts.Name = "ExpandButtonScripts";
+            this.ExpandButtonScripts.Size = new System.Drawing.Size(24, 24);
+            this.ExpandButtonScripts.TabIndex = 2;
+            // 
+            // ToggleSwitchHud
+            // 
+            this.ToggleSwitchHud.Checked = false;
+            this.ToggleSwitchHud.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.ToggleSwitchHud.Location = new System.Drawing.Point(260, 9);
+            this.ToggleSwitchHud.Name = "ToggleSwitchHud";
+            this.ToggleSwitchHud.Size = new System.Drawing.Size(46, 22);
+            this.ToggleSwitchHud.TabIndex = 1;
+            // 
+            // ExpandButtonHud
+            // 
+            this.ExpandButtonHud.BackColor = System.Drawing.Color.Transparent;
+            this.ExpandButtonHud.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.ExpandButtonHud.Expanded = false;
+            this.ExpandButtonHud.Location = new System.Drawing.Point(320, 8);
+            this.ExpandButtonHud.Name = "ExpandButtonHud";
+            this.ExpandButtonHud.Size = new System.Drawing.Size(24, 24);
+            this.ExpandButtonHud.TabIndex = 2;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -575,6 +575,7 @@
             this.Controls.Add(this.PanelHud);
             this.Controls.Add(this.DetailHud);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.Name = "MainForm";
             this.Text = "PHDModManager";

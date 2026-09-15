@@ -5,6 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
@@ -339,6 +340,7 @@ namespace PHDModManager
         private void AplicarTemaOscuro()
         {
             BackColor = ColorFondo;
+            HabilitarDobleBuffer(this);
 
             foreach (var cabecera in new[] { PanelWeapon, PanelPerks, PanelGloves, PanelScripts, PanelHud })
                 TemarPanelCabecera(cabecera);
@@ -348,8 +350,14 @@ namespace PHDModManager
             foreach (var detalle in new[] { DetailWeapons, DetailPerks, DetailGlove, DetailScripts, DetailHud })
                 TemarPanelDetalle(detalle);
 
+            // Unificado a ColorFondo (el mismo color que el fondo general
+            // de la ventana): encabezado, panel desplegado, contenedor de
+            // la lista y cada fila quedan todos del mismo tono.
             foreach (var lista in new[] { ItemsWeapons, ItemsPerks, ItemsGloves, ItemsScripts, ItemsHud })
-                lista.BackColor = ColorControlInterno;
+            {
+                lista.BackColor = ColorFondo;
+                HabilitarDobleBuffer(lista);
+            }
 
             foreach (var caja in new[] { SearchWeapons, SearchPerks, SearchGloves, SearchScripts, SearchHud })
                 TemarTextBox(caja);
@@ -368,7 +376,7 @@ namespace PHDModManager
 
         private void TemarPanelCabecera(Panel panel)
         {
-            panel.BackColor = ColorPanel;
+            panel.BackColor = ColorFondo;
             foreach (Control c in panel.Controls)
             {
                 if (c is Label lbl)
@@ -379,6 +387,10 @@ namespace PHDModManager
             }
         }
 
+        // Vuelve a ColorFondo (el fondo general de la ventana): así el
+        // bloque de la lista (encabezado + filas, ambos en ColorPanel)
+        // queda visualmente separado del resto, con un margen de
+        // ColorFondo alrededor, en vez de fundirse todo en un solo bloque.
         private void TemarPanelDetalle(Panel panel)
         {
             panel.BackColor = ColorFondo;
@@ -562,6 +574,33 @@ namespace PHDModManager
 
         private static int ColorAColorRef(Color color) => color.R | (color.G << 8) | (color.B << 16);
 
+        // Fuerza double buffering en un control por reflexión (Panel no
+        // expone esta propiedad públicamente). Sin esto, en un panel con
+        // AutoScroll y muchos controles hijos adyacentes (como las filas de
+        // PoblarLista) Windows a veces deja asomar una línea de 1px del
+        // color de fondo del padre justo en el borde entre dos filas
+        // vecinas, aunque las coordenadas coincidan exactamente — es un
+        // artefacto de repintado, no un hueco real en el layout.
+        private static void HabilitarDobleBuffer(Control control)
+        {
+            try
+            {
+                typeof(Control).InvokeMember(
+                    "DoubleBuffered",
+                    BindingFlags.SetProperty | BindingFlags.Instance | BindingFlags.NonPublic,
+                    null,
+                    control,
+                    new object[] { true }
+                );
+            }
+            catch
+            {
+                // Si por lo que sea la reflexión falla (versión rara de
+                // .NET, control bloqueado, etc.) no rompe nada: el panel
+                // sigue funcionando sin double buffering, como antes.
+            }
+        }
+
         private void AplicarTemaBarraTitulo()
         {
             try
@@ -703,25 +742,59 @@ namespace PHDModManager
             "Plutonium", "bin", "plutonium-bootstrapper-win-x64.exe"
         );
 
+        private static readonly string RutaPlutoniumPersonalizadaFile = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "PHDModManager", "plutonium_path.txt"
+        );
+
+        private string ObtenerRutaPlutonium()
+        {
+            // 1. Ruta estándar
+            if (File.Exists(RutaPlutoniumBootstrapper))
+                return RutaPlutoniumBootstrapper;
+
+            // 2. Ruta personalizada guardada anteriormente
+            if (File.Exists(RutaPlutoniumPersonalizadaFile))
+            {
+                string rutaGuardada = File.ReadAllText(RutaPlutoniumPersonalizadaFile).Trim();
+                if (File.Exists(rutaGuardada))
+                    return rutaGuardada;
+            }
+
+            // 3. Pedir al usuario que la busque manualmente
+            using (OpenFileDialog dialog = new OpenFileDialog())
+            {
+                dialog.Title = Textos.T("TituloSeleccionarPlutonium");
+                dialog.Filter = "plutonium-bootstrapper-win-x64.exe|plutonium-bootstrapper-win-x64.exe|Ejecutables (*.exe)|*.exe";
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    string rutaElegida = dialog.FileName;
+                    Directory.CreateDirectory(Path.GetDirectoryName(RutaPlutoniumPersonalizadaFile));
+                    File.WriteAllText(RutaPlutoniumPersonalizadaFile, rutaElegida);
+                    return rutaElegida;
+                }
+            }
+
+            return null; // el usuario canceló
+        }
+
         private void BtnIniciarPlutonium_Click(object sender, EventArgs e)
         {
             try
             {
-                if (!File.Exists(RutaPlutoniumBootstrapper))
+                string rutaPlutonium = ObtenerRutaPlutonium();
+
+                if (string.IsNullOrEmpty(rutaPlutonium))
                 {
-                    MessageBox.Show(
-                        Textos.T("MsgPlutoniumNoEncontrado"),
-                        Textos.T("TituloPlutoniumNoEncontrado"),
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning
-                    );
+                    // el usuario canceló el diálogo, no hacer nada más
                     return;
                 }
 
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                 {
-                    FileName = RutaPlutoniumBootstrapper,
-                    WorkingDirectory = Path.GetDirectoryName(RutaPlutoniumBootstrapper)
+                    FileName = rutaPlutonium,
+                    WorkingDirectory = Path.GetDirectoryName(rutaPlutonium)
                 });
             }
             catch (Exception ex)
@@ -1382,23 +1455,29 @@ namespace PHDModManager
             int y = 0;
             foreach (var item in items)
             {
-                var row = new Panel { Size = new Size(contenedor.Width - 20, 28), Location = new Point(0, y), Tag = item, BackColor = ColorControlInterno };
+                // Alto de fila = 32 (igual al salto vertical entre filas,
+                // más abajo) para que no quede ningún hueco visible entre
+                // una fila y la siguiente. Antes el alto era 28 con un
+                // salto de 32, dejando una tira de 4px del color del
+                // contenedor entre cada fila.
+                var row = new Panel { Size = new Size(contenedor.Width - 20, 32), Location = new Point(0, y), Tag = item, BackColor = ColorFondo };
+                HabilitarDobleBuffer(row);
 
-                var lbl = new Label { Text = item.DisplayName, AutoSize = true, Location = new Point(4, 6), ForeColor = ColorTexto, BackColor = Color.Transparent };
+                var lbl = new Label { Text = item.DisplayName, AutoSize = true, Location = new Point(4, 8), ForeColor = ColorTexto, BackColor = Color.Transparent };
                 row.Controls.Add(lbl);
 
                 if (item.Presente)
                 {
-                    var toggle = new ToggleSwitch { Size = new Size(40, 20), Location = new Point(row.Width - 50, 4), Checked = item.Instalado };
+                    var toggle = new ToggleSwitch { Size = new Size(40, 20), Location = new Point(row.Width - 50, 6), Checked = item.Instalado };
 
                     var btnEliminar = new Button
                     {
                         Text = "X",
                         Size = new Size(24, 20),
-                        Location = new Point(row.Width - 80, 4),
+                        Location = new Point(row.Width - 80, 6),
                         FlatStyle = FlatStyle.Flat,
                         ForeColor = ColorEliminar,
-                        BackColor = ColorControlInterno
+                        BackColor = ColorFondo
                     };
                     btnEliminar.FlatAppearance.BorderColor = ColorBorde;
                     btnEliminar.FlatAppearance.MouseOverBackColor = ColorBotonHover;
@@ -1441,7 +1520,7 @@ namespace PHDModManager
                     {
                         Text = Textos.T("BtnInstalarHud"),
                         Size = new Size(90, 20),
-                        Location = new Point(row.Width - 94, 4),
+                        Location = new Point(row.Width - 94, 6),
                         FlatStyle = FlatStyle.Flat,
                         BackColor = ColorBotonFondo,
                         ForeColor = ColorTexto
@@ -1509,5 +1588,9 @@ namespace PHDModManager
             }
         }
 
+        private void LblVersion_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }

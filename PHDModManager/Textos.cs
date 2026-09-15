@@ -33,6 +33,7 @@ namespace PHDModManager
             ["BtnIniciarPlutonium"] = "Iniciar Plutonium",
             ["MsgPlutoniumNoEncontrado"] = "No se encontró Plutonium en la ubicación estándar.",
             ["TituloPlutoniumNoEncontrado"] = "Plutonium no encontrado",
+            ["TituloSeleccionarPlutonium"] = "Seleccioná el ejecutable de Plutonium",
             ["MsgErrorIniciarPlutonium"] = "No se pudo iniciar Plutonium.\n\n{0}",
             ["TituloErrorIniciarPlutonium"] = "Error al iniciar Plutonium",
 
@@ -145,6 +146,7 @@ namespace PHDModManager
             ["BtnIniciarPlutonium"] = "Launch Plutonium",
             ["MsgPlutoniumNoEncontrado"] = "Plutonium wasn't found in the standard location.",
             ["TituloPlutoniumNoEncontrado"] = "Plutonium not found",
+            ["TituloSeleccionarPlutonium"] = "Select the Plutonium executable",
             ["MsgErrorIniciarPlutonium"] = "Couldn't launch Plutonium.\n\n{0}",
             ["TituloErrorIniciarPlutonium"] = "Error launching Plutonium",
 

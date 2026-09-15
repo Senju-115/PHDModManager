@@ -10,7 +10,7 @@ namespace PHDModManager
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());  // <-- CAMBIO (antes: new PHDModManager() o similar)
+            Application.Run(new MainForm());  
         }
     }
 }
